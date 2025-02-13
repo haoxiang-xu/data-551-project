@@ -1,57 +1,30 @@
 # Anime Popularity & Ratings Dashboard
-Jump to the [Project Setup](#project-setup)
+[Project Setup](#project-setup)
 ## Overview
-This project aims to develop an interactive dashboard that analyzes key factors affecting anime popularity and ratings. The primary goal is to provide actionable insights for anime companies, studios, and investors to maximize profitability by identifying the most critical predictors influencing anime success.
-
-## Problem Statement
-The anime industry is a competitive market where companies must decide on optimal production strategies. Questions such as:
-- **"What factors contribute most to high ratings?"** 
-- **"Which genres have the highest audience retention?"** 
-- **"When is the best time to release anime for maximum viewership?"**
-  
-These are essential for stakeholders. Our dashboard will help answer these questions using data-driven insights.
-
-## Application Interface & Features
-The app will consist of multiple interactive visualization panels, allowing users to explore different aspects of anime ratings and popularity. The interface will be designed with ease of navigation in mind, ensuring that stakeholders can quickly derive insights.
+This project is designed to develop an interactive dashboard that analyzes key factors affecting anime **popularity and ratings**. The primary goal is to provide actionable insights for certain audiences such as **anime companies, studios, investors** and so on. Therefore, the dashboard would be helpful for maximizing profitability by identifying the most critical predictors influencing anime success.
 
 ### **Main Components**
+1. **HeatMap (Main Plot)**
+   - A heatmap showing **the correlation between the various predictors with target variables**.
+   - This will be the primary insight to guide what predictors we should most liekly focus on.
 
-1. **Landing Page (Overview & Summary Metrics)**
-   - Displays total number of anime in the dataset.
-   - Shows key summary statistics (e.g., average rating, most popular genre, most successful studios).
-   - Allows users to filter anime by genre, studio, release year, or type.
-
-2. **Main Visualization Panel (Key Predictor for Ratings)**
-   - A bar chart or correlation heatmap showing **the strongest predictor influencing anime ratings**.
-   - This will be the primary insight guiding decisions on anime production.
-
-3. **Supporting Visualization Panels**
-   - **Correlation between important predictors and target varaible (Heat Map)**
-     - Identifies the most important predictors for anime ratings and popularity.
-   - **Best Time to Publish Anime (Time-Series Plot)**
-     - Identifies the optimal time of year for anime releases based on historical trends.
-   - **genre vs. rating (Bar Chart)**
-     - Explores the impact of genre on ratings.
-   - **Impact of Studio, Producer & Source Material on Ratings (Grouped Bar Chart)**
+2. **Supporting Visualization Panels**
+   - **Summary Statistic**
+     - Top 3 important predictors such as **genre, studio** of anime success.
+     - **Average rating** of anime by those predictors as well.
+   - **Time-Series Plot (with filtering slider)**
+     - Identifies the **optimal time** of year for anime releases and its score based on historical trends.
+   - **Bar Chart (exmaple - genre vs. rating)**
+     - Explores the impact of significant predictor such as genre on ratings.
+   - **Radar Chart**
      - Analyzes the effect of production decisions on anime success.
-   - **Effect of Type & Duration on Ratings (Box Plot/Violin Plot)**
+   - **List of Filters**
      - Evaluates how format (TV, Movie, OVA) and duration influence ratings.
-   - **Episode Length vs. Ratings (Scatter Plot)**
+   - **Last plot**
      - Determines whether longer or shorter series tend to perform better.
 
-4. **Final Summary Panel**
-   - Presents a ranked list of the most significant predictors of anime success.
-   - Includes recommendations for maximizing profitability based on the analysis.
-
-## User Interaction
-- Users can filter results based on **Type, Genres, Studio**.
-- Hovering over graphs provides **detailed data points** for deeper analysis.
-- Adjusting and dragging the slider on the bottom plot to **filter the time period**.
-
 ## Sketch of App Layout
-![Dashboard Sketch](link_to_sketch_image)
-
-This dashboard will serve as a valuable decision-making tool for anime production and investment strategy, ensuring that target audiences can leverage **data-driven insights** to create successful and profitable anime productions.
+![Dashboard Sketch](./assets/others/demo.png)
 
 ## Project Setup
 ```
@@ -62,6 +35,6 @@ pip install -r requirements.txt
 <div style="display: flex; flex-direction: column; align-items: center;">
   <h6>The dataset is collected from:</h6>
   <a href="https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset" target="_blank">
-  <img src="./assets/others/Kaggle.png" alt="kaggle site logo" width="50" height="25">
+  <img src="./assets/others/Kaggle.png" alt="kaggle site logo" width="45" height="22.5">
   </a>
 </div>
