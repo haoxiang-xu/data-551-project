@@ -2,6 +2,14 @@
 
 ## 1. Motivation and purpose
 
+Role: Data Science Consultancy Team
+
+Target Audience: Anime Enthusiasts, Anime Industry Professionals
+
+Anime is becoming increasingly popular due to a growing fan base and advancements in anime production technology. Fans and anime-related businesses or companies are aware of the attraction and the expanding market of the anime. Thus, as a data science consultancy team, we are interested in the factors that most significantly impact anime popularity and ratings and how anime industries and companies can use these insights to maximize profitability or attract more fans.
+
+Moreover, the purpose of our project is to create a dashboard with several interactive visualizations to determine the factors that strongly correlate with audience satisfaction through the analysis of metrics such as scores, genre, type, timeline, and popularity of anime. Through the interactivity of the provided visualizations, users can examine the data, view relationships, and research patterns regarding the success of anime on a deeper level. For the specific target audience, the dashboard can help anime enthusiasts quickly find top-rated anime, as well as assist anime industry professionals in gaining a deeper understanding of the anime market and producing higher-rated anime.4
+
 ## 2. Description of Data
 
 ### Dataset Column Descriptions and Overview
