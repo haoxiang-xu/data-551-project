@@ -1,5 +1,4 @@
 # Anime Popularity & Ratings Dashboard
-***
 ## Overview
 This project aims to develop an interactive dashboard that analyzes key factors affecting anime popularity and ratings. The primary goal is to provide actionable insights for anime companies, studios, and investors to maximize profitability by identifying the most critical predictors influencing anime success.
 
@@ -51,6 +50,11 @@ The app will consist of multiple interactive visualization panels, allowing user
 ![Dashboard Sketch](link_to_sketch_image)
 
 This dashboard will serve as a valuable decision-making tool for anime production and investment strategy, ensuring that target audiences can leverage **data-driven insights** to create successful and profitable anime productions.
+
+## Project Setup
+```
+pip install -r requirements.txt
+```
 
 
 <div style="display: flex; flex-direction: column; align-items: center;">
