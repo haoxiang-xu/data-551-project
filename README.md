@@ -7,7 +7,8 @@ This project aims to develop an interactive dashboard that analyzes key factors 
 The anime industry is a competitive market where companies must decide on optimal production strategies. Questions such as:
 - **"What factors contribute most to high ratings?"** 
 - **"Which genres have the highest audience retention?"** 
-- **"When is the best time to release anime for maximum viewership?"** 
+- **"When is the best time to release anime for maximum viewership?"**
+  
 These are essential for stakeholders. Our dashboard will help answer these questions using data-driven insights.
 
 ## Application Interface & Features
