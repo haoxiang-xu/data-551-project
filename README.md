@@ -1,4 +1,5 @@
 # Anime Popularity & Ratings Dashboard
+Jump to the [Project Setup](#project-setup)
 ## Overview
 This project aims to develop an interactive dashboard that analyzes key factors affecting anime popularity and ratings. The primary goal is to provide actionable insights for anime companies, studios, and investors to maximize profitability by identifying the most critical predictors influencing anime success.
 
@@ -28,8 +29,8 @@ The app will consist of multiple interactive visualization panels, allowing user
      - Identifies the most important predictors for anime ratings and popularity.
    - **Best Time to Publish Anime (Time-Series Plot)**
      - Identifies the optimal time of year for anime releases based on historical trends.
-   - **Completion vs. Drop Rate by Genre (Stacked Bar Chart)**
-     - Shows audience retention for different anime genres.
+   - **genre vs. rating (Bar Chart)**
+     - Explores the impact of genre on ratings.
    - **Impact of Studio, Producer & Source Material on Ratings (Grouped Bar Chart)**
      - Analyzes the effect of production decisions on anime success.
    - **Effect of Type & Duration on Ratings (Box Plot/Violin Plot)**
@@ -43,8 +44,8 @@ The app will consist of multiple interactive visualization panels, allowing user
 
 ## User Interaction
 - Users can filter results based on **Type, Genres, Studio**.
-- Hovering over graphs provides detailed data points for deeper analysis.
-- Adjusting and dragging the slider on the bottom of the page for time filtering.
+- Hovering over graphs provides **detailed data points** for deeper analysis.
+- Adjusting and dragging the slider on the bottom plot to **filter the time period**.
 
 ## Sketch of App Layout
 ![Dashboard Sketch](link_to_sketch_image)
