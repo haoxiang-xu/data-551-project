@@ -3,10 +3,11 @@
 ## Overview
 This project is designed to develop an interactive dashboard that analyzes key factors affecting anime **popularity and ratings**. The primary goal is to provide actionable insights for certain audiences such as **anime companies, studios, investors** and so on. Therefore, the dashboard would be helpful for maximizing profitability by identifying the most critical predictors influencing anime success.
 
-### **Main Components**
-1. **HeatMap (Main Plot)**
-   - A heatmap showing **the correlation between the various predictors with target variables**.
-   - This will be the primary insight to guide what predictors we should most liekly focus on.
+### **Landing Page**
+1. **Base Visualization Panel**
+   - **Heat Map**
+     - showing **the correlation between the various predictors with target variables**.
+     - The heatmap will identify the key predictor to support advanced analysis.
 
 2. **Supporting Visualization Panels**
    - **Summary Statistic**
@@ -17,11 +18,12 @@ This project is designed to develop an interactive dashboard that analyzes key f
    - **Bar Chart (exmaple - genre vs. rating)**
      - Explores the impact of significant predictor such as genre on ratings.
    - **Radar Chart**
-     - Analyzes the effect of production decisions on anime success.
+     - Group by different **catogorical** predictors (e.g. genre, studio ...)
+     - Identifies which predictors are more **important in terms of various metircs** such as number of people watching, average rating, number of episodes, etc.
    - **List of Filters**
-     - Evaluates how format (TV, Movie, OVA) and duration influence ratings.
-   - **Last plot**
-     - Determines whether longer or shorter series tend to perform better.
+     - Mose of plots in the page can be controlled by different `Types, Genres, and Studios`.
+   - **Scatter plot (episode length vs. rating)**
+     - Determines the relationship betweene these two, we can get **optimal** series length for the **better audience engagement and profitability**.
 
 ## Sketch of App Layout
 ![Dashboard Sketch](./assets/others/dashboard_prototype.png)
