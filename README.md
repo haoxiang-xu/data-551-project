@@ -1,16 +1,14 @@
-<div style="display: flex; align-items: center;">
-  <h1 style="margin-right: 10px;">Anime Popularity & Ratings Dashboard</h1>
-  <a href="https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset" target="_blank">
-  <img src="./Kaggle.png" alt="kaggle site logo" width="100" height="50">
-  </a>
-</div>
-
+# Anime Popularity & Ratings Dashboard
 ***
 ## Overview
 This project aims to develop an interactive dashboard that analyzes key factors affecting anime popularity and ratings. The primary goal is to provide actionable insights for anime companies, studios, and investors to maximize profitability by identifying the most critical predictors influencing anime success.
 
 ## Problem Statement
-The anime industry is a competitive market where companies must decide on optimal production strategies. Questions such as **"What factors contribute most to high ratings?"**, **"Which genres have the highest audience retention?"**, and **"When is the best time to release anime for maximum viewership?"** are essential for stakeholders. Our dashboard will help answer these questions using data-driven insights.
+The anime industry is a competitive market where companies must decide on optimal production strategies. Questions such as:
+- **"What factors contribute most to high ratings?"** 
+- **"Which genres have the highest audience retention?"** 
+- **"When is the best time to release anime for maximum viewership?"** 
+These are essential for stakeholders. Our dashboard will help answer these questions using data-driven insights.
 
 ## Application Interface & Features
 The app will consist of multiple interactive visualization panels, allowing users to explore different aspects of anime ratings and popularity. The interface will be designed with ease of navigation in mind, ensuring that stakeholders can quickly derive insights.
@@ -27,6 +25,8 @@ The app will consist of multiple interactive visualization panels, allowing user
    - This will be the primary insight guiding decisions on anime production.
 
 3. **Supporting Visualization Panels**
+   - **Correlation between important predictors and target varaible (Heat Map)**
+     - Identifies the most important predictors for anime ratings and popularity.
    - **Best Time to Publish Anime (Time-Series Plot)**
      - Identifies the optimal time of year for anime releases based on historical trends.
    - **Completion vs. Drop Rate by Genre (Stacked Bar Chart)**
@@ -43,12 +43,19 @@ The app will consist of multiple interactive visualization panels, allowing user
    - Includes recommendations for maximizing profitability based on the analysis.
 
 ## User Interaction
-- Users can filter results based on **genre, year of release, studio, anime type (TV, Movie etc), and episode count**.
+- Users can filter results based on **Type, Genres, Studio**.
 - Hovering over graphs provides detailed data points for deeper analysis.
-- Interactive tooltips and legends help in interpreting results.
+- Adjusting and dragging the slider on the bottom of the page for time filtering.
 
 ## Sketch of App Layout
 ![Dashboard Sketch](link_to_sketch_image)
 
-This dashboard will serve as a valuable decision-making tool for anime production and investment strategy, ensuring that stakeholders can leverage **data-driven insights** to create successful and profitable anime productions.
+This dashboard will serve as a valuable decision-making tool for anime production and investment strategy, ensuring that target audiences can leverage **data-driven insights** to create successful and profitable anime productions.
 
+
+<div style="display: flex; flex-direction: column; align-items: center;">
+  <h6>The dataset is collected from:</h6>
+  <a href="https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset" target="_blank">
+  <img src="./Kaggle.png" alt="kaggle site logo" width="50" height="25">
+  </a>
+</div>
