@@ -2,6 +2,7 @@
 .DS_Store
 
 /* python related -------------------------------------------------------- */
+.ipynb_checkpoints/
 __pycache__/
 venv/
 *.pyc
