@@ -24,7 +24,7 @@ This project is designed to develop an interactive dashboard that analyzes key f
      - Determines whether longer or shorter series tend to perform better.
 
 ## Sketch of App Layout
-![Dashboard Sketch](./assets/others/demo.png)
+![Dashboard Sketch](./assets/others/dashboard_prototype.png)
 
 ## Project Setup
 ```
