@@ -49,3 +49,14 @@ This dataset is sourced from MyAnimeList (MAL) and contains structured informati
 This dataset will serve as the foundation for our analysis, allowing us to identify the key factors that contribute to an anime's popularity and high ratings. By leveraging interactive visualizations, we aim to uncover meaningful patterns and trends that influence audience engagement and reception.
 
 ## 3. Research questions and usage scenarios
+
+### Research Questions
+
+The primary goal of this project is to identify the key factors that contribute to an anime's popularity and high ratings, so that anime industries can use these insights for further production. To achieve this, we aim to answer the following research questions:
+1. What are the most influential factors affecting an anime’s popularity?
+2. How do popularity and high ratings relate to each other?
+3. What are the key drivers behind high-rated anime?
+
+### Usage Scenarios
+
+Steven works as a content strategist for a major anime streaming platform. His goal is to understand the key elements that make an anime successful in order to help his company optimize its production strategy and promotional efforts. He wants to analyze existing anime data to determine what makes an anime popular and highly rated, allowing him to make data-driven decisions on which genres to acquire and promote. When Steven logs into our “Anime Insights Dashboard”, he is presented with the overview of anime statistics, such as number of total anime, their corresponding average scores across the timeline, and the summary of the scores of different genres’ anime. He can filter out the target genres, types and studios to look into further visualization and analysis. By referring to these visualizations, he can explore the relationship between animes’ rating and popularity to identify hidden patterns. Also, he can analyze the trends in anime production over time, and compare different genres to determine the ones receiving high ratings over a selected period. Using these analyses, he can recommend his company to focus on acquiring specific types of anime that align with both critical acclaim and audience engagement.
