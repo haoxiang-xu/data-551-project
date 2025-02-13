@@ -56,6 +56,6 @@ This dashboard will serve as a valuable decision-making tool for anime productio
 <div style="display: flex; flex-direction: column; align-items: center;">
   <h6>The dataset is collected from:</h6>
   <a href="https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset" target="_blank">
-  <img src="./Kaggle.png" alt="kaggle site logo" width="50" height="25">
+  <img src="./assets/others/Kaggle.png" alt="kaggle site logo" width="50" height="25">
   </a>
 </div>
