@@ -4,6 +4,8 @@ from dash.dependencies import Input, Output
 import altair as alt
 alt.data_transformers.disable_max_rows()
 import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
 
@@ -15,32 +17,40 @@ root_container_style = {
     'width': '100%',
     'height': '100%',
     'background-color': '#ECECEC',
+    'overflow': 'hidden',
 }
 filter_container_style = {
     'position': 'absolute',
-    'bottom': '18px',
+    'bottom': '96px',
     'left': '18px',
     'width': '256px',
-    'height': '256px',
-    'background-color': '#FFFFFF',
+    'height': '128px',
 } 
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
 anime['start_date'] = pd.to_datetime(anime['start_date'])
 anime['end_date'] = pd.to_datetime(anime['end_date'])
+def data_preprocessing(df, selected_type=None):
+    df['start_date'] = pd.to_datetime(df['start_date'])
+    df['end_date'] = pd.to_datetime(df['end_date'])
+    
+    if selected_type and selected_type != 'All':
+        df = df[df['Type'] == selected_type]
+
+    return df
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
 
 # { Graph generation functions } ======================================================================================================== #
-def generate_anime_count_by_date(anime):
+def generate_anime_count_by_date(df):
     all_dates = []
     
-    anime['start_date'] = pd.to_datetime(anime['start_date'], errors='coerce')
-    anime['end_date'] = pd.to_datetime(anime['end_date'], errors='coerce')
+    df['start_date'] = pd.to_datetime(df['start_date'], errors='coerce')
+    df['end_date'] = pd.to_datetime(df['end_date'], errors='coerce')
     
-    anime = anime.dropna(subset=['start_date', 'end_date'])
+    df = df.dropna(subset=['start_date', 'end_date'])
     
-    for _, row in anime.iterrows():
+    for _, row in df.iterrows():
         date_range = pd.date_range(row['start_date'], row['end_date'], freq='D')
         all_dates.extend(date_range)
 
@@ -65,7 +75,7 @@ def generate_anime_count_by_date(anime):
     
     chart.configure_view(strokeWidth=0)
     return chart.to_html()
-def generate_heatmap(df, selected_type=None):
+def generate_heatmap(df):
     """
     Create a correlation heatmap based on filtered data
     
@@ -76,39 +86,51 @@ def generate_heatmap(df, selected_type=None):
     selected_type : str, optional
         The type of anime to filter by (e.g., 'TV', 'Movie', etc.)
     """
-    # Filter data if type is selected
-    if selected_type and selected_type != 'All':
-        df = df[df['Type'] == selected_type]
-    
+    # Define numeric columns
+    numeric_columns = df.select_dtypes(include=[np.number]).columns
+
     # Calculate correlation matrix
     correlation_matrix = df[numeric_columns].corr()
     
-    # heatmap creation
+    # Heatmap creation
     fig = go.Figure(data=go.Heatmap(
         z=correlation_matrix,
         x=numeric_columns,
         y=numeric_columns,
         hoverongaps=False,
-        # define the max and min for the correlation value
-        zmin=-1,
-        zmax=1,
-        colorscale='RdBu',
+        zmin=-1, zmax=1,
+        colorscale=[
+            [0, "rgb(240, 240, 255)"],  # Light Blue
+            [0.5, "rgb(180, 180, 250)"],  # Medium Blue
+            [1, "rgb(120, 120, 200)"]  # Darker Blue
+        ],
         text=np.round(correlation_matrix, 2),
-        # correlation value here
         texttemplate='%{text}',
         textfont={"size": 12},
-        showscale=True
+        showscale=False,  # Hide the color scale for a clean look
     ))
-    
-    # heatmap layout
+
+    # Layout adjustments to match the uploaded style
     fig.update_layout(
-        title=f'Anime Correlation Heatmap {f"- {selected_type}" if selected_type else ""}',
         xaxis_title="Metrics",
         yaxis_title="Metrics",
-        height=800,
-        width=900
+        height=500,  # Reduce height to be more square-like
+        width=500,
+        xaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False  # Hide axis labels
+        ),
+        yaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False  # Hide axis labels
+        ),
+        margin=dict(l=50, r=50, t=50, b=50),
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot area
     )
-    
+
     return fig
 # { Graph generation functions } ======================================================================================================== #
 
@@ -119,22 +141,32 @@ anime_count_by_date = generate_anime_count_by_date(anime)
 
 app.layout = html.Div([
     html.Div([
-        html.Span("Filters", style={'position': 'absolute', 'top': '0', 'left': '0', 'font-size': '24px'}),
+        html.Span("Filters", style={'position': 'absolute', 'top': '0', 'left': '0', 'font-size': '24px', 'font-family': 'Arial'}),
         dcc.Dropdown(
             id='type-dropdown',
+            className='dropdown-up',  # Link to the CSS class
             options=[{'label': anime_type, 'value': anime_type} for anime_type in anime['Type'].dropna().unique()],
             value=anime['Type'].dropna().unique()[0] if not anime['Type'].dropna().empty else None,
-            style={'position': 'absolute', 'top': '32px', 'left': '0', 'width': '100%'}
-        ),
+            style={'position': 'absolute', 'top': '16px', 'left': '0', 'width': '100%', 'font-size': '16px', 'font-family': 'Arial', 'border-radius': '8px'},
+            persistence=True,  # Keeps the selected value persistent across callbacks
+            persistence_type='session'
+        )
     ], style=filter_container_style),
+    dcc.Graph(id='heatmap-graph', style={'position': 'absolute', 'top': '50%', 'left': '50%', 'width': '500px', 'height': '500px', 'transform': 'translate(-50%, -50%)'}),
+    html.Iframe(id='area-graph', srcDoc=anime_count_by_date, style={'position': 'absolute', 'bottom': '0', 'left': '274px', 'width': 'calc(100% - 300px)' , 'height': '150px', 'border': 'none'})
 ], style=root_container_style)
 
 @app.callback(
-    Output('scatter-plot', 'srcDoc'),
-    Input('interval-component', 'n_intervals')  # ✅ Trigger updates every 10 seconds
+    [Output('heatmap-graph', 'figure'),
+     Output('area-graph', 'srcDoc')],
+    [Input('type-dropdown', 'value')]
 )
-def update_plot(selected_species):
-    return generate_anime_count_by_date(anime)
+def update_graphs(selected_type):
+    
+    processed_anime = data_preprocessing(anime, selected_type)
+    heatmap_graph = generate_heatmap(processed_anime)
+    area_graph = generate_anime_count_by_date(processed_anime)
+    return heatmap_graph, area_graph
 
 if __name__ == '__main__':
     app.run_server(debug=False)
