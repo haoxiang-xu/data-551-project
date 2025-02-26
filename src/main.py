@@ -57,15 +57,18 @@ def generate_anime_count_by_date(df):
     # Convert to DataFrame and count occurrences
     date_counts = pd.DataFrame(all_dates, columns=['date'])
     date_counts = date_counts.groupby('date').size().reset_index(name='anime_count')
+    date_counts = date_counts.iloc[::30, :]
 
     # Create the Altair chart
     chart = alt.Chart(date_counts).mark_area().encode(
+        color=alt.value('#FFFFFF'),
         x=alt.X('date:T', axis=alt.Axis(grid=False, title=None)),
         y=alt.Y('anime_count:Q', axis=alt.Axis(grid=False, title=None)),
         tooltip=['date:T', 'anime_count:Q']
     ).properties(
         width='container',
-        height=100
+        height=100,
+        background="#E5E5E5"
     ).configure_view(
         strokeWidth=0,
         fill="#00000000"
@@ -153,7 +156,7 @@ app.layout = html.Div([
         )
     ], style=filter_container_style),
     dcc.Graph(id='heatmap-graph', style={'position': 'absolute', 'top': '50%', 'left': '50%', 'width': '500px', 'height': '500px', 'transform': 'translate(-50%, -50%)'}),
-    html.Iframe(id='area-graph', srcDoc=anime_count_by_date, style={'position': 'absolute', 'bottom': '0', 'left': '274px', 'width': 'calc(100% - 300px)' , 'height': '150px', 'border': 'none'})
+    html.Iframe(id='area-graph', srcDoc=anime_count_by_date, style={'position': 'absolute', 'bottom': '18px', 'right': '18px', 'width': 'calc(100% - 300px)' , 'height': '150px', 'border': 'none', 'background-color': '#E5E5E5', 'overflow': 'hidden', 'border-radius': '16px', 'box-shadow': '0 0 16px rgba(0, 0, 0, 0.25)'}),
 ], style=root_container_style)
 
 @app.callback(
