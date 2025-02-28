@@ -6,8 +6,10 @@ alt.data_transformers.disable_max_rows()
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import json
+import plotly.express as px
 
-anime = pd.read_csv("../data/preprocessed_anime.csv")
+anime = pd.read_csv("data/preprocessed_anime.csv")
 
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 root_container_style = {
@@ -185,6 +187,50 @@ def generate_radar(df):
     )
     
     return fig
+
+def generate_bar(df):
+        # Load the JSON
+    alt_chart_data = json.loads(df)
+
+    # Extract the dataset to handle dynamic keys
+    dataset_key = list(alt_chart_data["datasets"].keys())[0] # Get the first dataset key
+    df_chart = pd.DataFrame(alt_chart_data["datasets"][dataset_key])  # Convert dataset to DataFrame
+
+    # Convert to Plotly Bar Chart
+    fig = px.bar(
+        df_chart,
+        x="Score",
+        y="Genres",
+        orientation="h",
+        title="Average Score by Genre",
+        color="Score",
+        color_continuous_scale="blues"
+    )
+
+    fig.update_layout(yaxis={'categoryorder': 'total ascending'}, height = 600)
+    
+    return fig
+
+# The bar component
+df_exploded = anime.assign(Genres=anime['Genres'].str.split(', ')).explode('Genres')
+genre_avg_score = df_exploded.groupby('Genres')['Score'].mean().reset_index()
+genre_avg_score = genre_avg_score.sort_values(by='Score', ascending=False)
+top_genres = 5
+bar_height = 30  # Set a fixed height per bar
+chart_height = top_genres * bar_height + 100
+genre_avg_score = genre_avg_score.head(top_genres)
+chart = alt.Chart(genre_avg_score).mark_bar().encode(
+    x=alt.X('Score:Q', title='Average Score'),
+    y=alt.Y('Genres:N', sort='-x', title='Genre'),
+    color=alt.Color('Score:Q', scale=alt.Scale(scheme='blues'), legend=None)
+).properties(
+    title="Average Score by Genre",
+    width=500,
+    height=chart_height
+)
+chart
+chart_json = chart.to_json()
+
 # { Graph generation functions } ======================================================================================================== #
 
 
@@ -208,21 +254,25 @@ app.layout = html.Div([
     dcc.Graph(id='heatmap-graph', style={'position': 'absolute', 'top': '50%', 'left': '50%', 'width': '500px', 'height': '500px', 'transform': 'translate(-50%, -50%)'}),
     dcc.Graph(id='radar-graph', style={'position': 'absolute', 'top': '18px', 'right': '18px', 'width': '500px', 'height': '500px'}),
     html.Iframe(id='area-graph', srcDoc=anime_count_by_date, style={'position': 'absolute', 'bottom': '18px', 'right': '18px', 'width': 'calc(100% - 300px)' , 'height': '150px', 'border': 'none', 'background-color': '#E5E5E5', 'overflow': 'hidden', 'border-radius': '16px', 'box-shadow': '0 0 16px rgba(0, 0, 0, 0.25)'}),
+    dcc.Graph( id='altair-graph', config={'displayModeBar': False}, figure={'data': [], 'layout': {'height': 600}}, style={ 'position': 'absolute', 'bottom': '240px', 'left': '18px', 'width': '500px', 'height': '600px', 'overflow': 'hidden'}),    
+    html.Div(id='chart-json', style={'display': 'none'}, children=chart_json),
 ], style=root_container_style)
 
 @app.callback(
     [Output('heatmap-graph', 'figure'),
      Output('radar-graph', 'figure'),
-     Output('area-graph', 'srcDoc')],
-    [Input('type-dropdown', 'value')]
+     Output('area-graph', 'srcDoc'),
+     Output('altair-graph', 'figure')],
+    [Input('type-dropdown', 'value'),
+     Input('chart-json', 'children')]
 )
-def update_graphs(selected_type):
-    
+def update_graphs(selected_type, chart_json):
     processed_anime = data_preprocessing(anime, selected_type)
     heatmap_graph = generate_heatmap(processed_anime)
     radar_graph = generate_radar(processed_anime)
     area_graph = generate_anime_count_by_date(processed_anime)
-    return heatmap_graph, radar_graph, area_graph
+    bar_graph = generate_bar(chart_json)
+    return heatmap_graph, radar_graph, area_graph, bar_graph
 
 if __name__ == '__main__':
     app.run_server(debug=False)
