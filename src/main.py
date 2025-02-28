@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 import json
 import plotly.express as px
 
-anime = pd.read_csv("data/preprocessed_anime.csv")
+anime = pd.read_csv("../data/preprocessed_anime.csv")
 
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 root_container_style = {
@@ -193,7 +193,6 @@ def generate_radar(df):
     )
     
     return fig
-
 def generate_bar(df):
     # Create and process data
     genre_avg_score = df.groupby('Genres')['Score'].mean().reset_index()
@@ -217,7 +216,6 @@ def generate_bar(df):
     )
     
     return chart.to_html()
-
 # { Graph generation functions } ======================================================================================================== #
 
 
