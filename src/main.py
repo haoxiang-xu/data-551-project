@@ -135,6 +135,56 @@ def generate_heatmap(df):
     )
 
     return fig
+def generate_radar(df):
+    # Explode the Genres column to assign each anime to multiple genres
+    df_exploded = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
+
+    # Count the frequency of each genre and select the top 10 most frequent ones
+    top_genres = df_exploded['Genres'].value_counts().head(10).index
+
+    # Filter dataset to include only the top 10 genres
+    df_exploded = df_exploded[df_exploded['Genres'].isin(top_genres)]
+
+    # Select relevant numerical columns
+    columns = ['Score', 'Members', 'Popularity', 'Completed', 'On-Hold', 'Dropped']
+
+    # Aggregate by genre, computing the mean for each variable
+    df_genre_avg = df_exploded.groupby('Genres')[columns].mean().reset_index()
+
+    # Normalize values for better visualization (Min-Max Scaling)
+    df_genre_avg[columns] = (df_genre_avg[columns] - df_genre_avg[columns].min()) / \
+                            (df_genre_avg[columns].max() - df_genre_avg[columns].min())
+
+    # Compute angle for each axis
+    num_vars = len(columns)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles += angles[:1]  # Close the circle
+
+    # Create the radar chart
+    fig = go.Figure()
+
+    # Plot each of the top 10 genres
+    for _, row in df_genre_avg.iterrows():
+        values = row[columns].values.flatten().tolist()
+        values += values[:1]  # Close the circle
+
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=columns + [columns[0]],
+            fill='toself',
+            name=row['Genres']
+        ))
+
+    # Update layout
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(visible=True)
+        ),
+        title="Radar Chart for Top 10 Most Frequent Anime Genres",
+        showlegend=True
+    )
+    
+    return fig
 # { Graph generation functions } ======================================================================================================== #
 
 
@@ -156,11 +206,13 @@ app.layout = html.Div([
         )
     ], style=filter_container_style),
     dcc.Graph(id='heatmap-graph', style={'position': 'absolute', 'top': '50%', 'left': '50%', 'width': '500px', 'height': '500px', 'transform': 'translate(-50%, -50%)'}),
+    dcc.Graph(id='radar-graph', style={'position': 'absolute', 'top': '18px', 'right': '18px', 'width': '500px', 'height': '500px'}),
     html.Iframe(id='area-graph', srcDoc=anime_count_by_date, style={'position': 'absolute', 'bottom': '18px', 'right': '18px', 'width': 'calc(100% - 300px)' , 'height': '150px', 'border': 'none', 'background-color': '#E5E5E5', 'overflow': 'hidden', 'border-radius': '16px', 'box-shadow': '0 0 16px rgba(0, 0, 0, 0.25)'}),
 ], style=root_container_style)
 
 @app.callback(
     [Output('heatmap-graph', 'figure'),
+     Output('radar-graph', 'figure'),
      Output('area-graph', 'srcDoc')],
     [Input('type-dropdown', 'value')]
 )
@@ -168,8 +220,9 @@ def update_graphs(selected_type):
     
     processed_anime = data_preprocessing(anime, selected_type)
     heatmap_graph = generate_heatmap(processed_anime)
+    radar_graph = generate_radar(processed_anime)
     area_graph = generate_anime_count_by_date(processed_anime)
-    return heatmap_graph, area_graph
+    return heatmap_graph, radar_graph, area_graph
 
 if __name__ == '__main__':
     app.run_server(debug=False)
