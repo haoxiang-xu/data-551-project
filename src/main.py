@@ -13,22 +13,28 @@ anime = pd.read_csv("data/preprocessed_anime.csv")
 
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 root_container_style = {
-    'position': 'absolute',
-    'top': '0',
-    'left': '0',
-    'width': '100%',
-    'height': '100%',
+    'position': 'relative',
+    'width': 'calc(100vw - 2rem)', 
+    'height': 'calc(100vh - 2rem)',  
     'background-color': '#ECECEC',
-    'overflow': 'hidden',
+    'overflow': 'hidden', 
+    'padding': '1rem',
+    'box-sizing': 'border-box'
 }
 filter_container_style = {
-    'position': 'absolute',
-    'bottom': '96px',
-    'left': '18px',
-    'width': '256px',
-    'height': '128px',
+    'position': 'relative',
+    'width': '100%',
+    'maxWidth': '256px',
+    'marginBottom': '1rem',
+    'height': 'auto',
 } 
-# { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
+genre_filter_container_style = {
+    'position': 'relative',
+    'width': '100%',
+    'maxWidth': '256px',
+    'marginBottom': '1rem',
+    'height': 'auto',
+}
 
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
 anime['start_date'] = pd.to_datetime(anime['start_date'])
@@ -189,47 +195,28 @@ def generate_radar(df):
     return fig
 
 def generate_bar(df):
-        # Load the JSON
-    alt_chart_data = json.loads(df)
-
-    # Extract the dataset to handle dynamic keys
-    dataset_key = list(alt_chart_data["datasets"].keys())[0] # Get the first dataset key
-    df_chart = pd.DataFrame(alt_chart_data["datasets"][dataset_key])  # Convert dataset to DataFrame
-
-    # Convert to Plotly Bar Chart
-    fig = px.bar(
-        df_chart,
-        x="Score",
-        y="Genres",
-        orientation="h",
-        title="Average Score by Genre",
-        color="Score",
-        color_continuous_scale="blues"
-    )
-
-    fig.update_layout(yaxis={'categoryorder': 'total ascending'}, height = 600)
+    # Create and process data
+    genre_avg_score = df.groupby('Genres')['Score'].mean().reset_index()
+    genre_avg_score = genre_avg_score.sort_values(by='Score', ascending=False)
     
-    return fig
-
-# The bar component
-df_exploded = anime.assign(Genres=anime['Genres'].str.split(', ')).explode('Genres')
-genre_avg_score = df_exploded.groupby('Genres')['Score'].mean().reset_index()
-genre_avg_score = genre_avg_score.sort_values(by='Score', ascending=False)
-top_genres = 5
-bar_height = 30  # Set a fixed height per bar
-chart_height = top_genres * bar_height + 100
-genre_avg_score = genre_avg_score.head(top_genres)
-chart = alt.Chart(genre_avg_score).mark_bar().encode(
-    x=alt.X('Score:Q', title='Average Score'),
-    y=alt.Y('Genres:N', sort='-x', title='Genre'),
-    color=alt.Color('Score:Q', scale=alt.Scale(scheme='blues'), legend=None)
-).properties(
-    title="Average Score by Genre",
-    width=500,
-    height=chart_height
-)
-chart
-chart_json = chart.to_json()
+    # Take top 5 genres
+    top_genres = 10
+    bar_height = 30
+    chart_height = top_genres * bar_height + 100
+    genre_avg_score = genre_avg_score.head(top_genres)
+    
+    # Create Altair chart
+    chart = alt.Chart(genre_avg_score).mark_bar().encode(
+        x=alt.X('Score:Q', title='Average Score'),
+        y=alt.Y('Genres:N', sort='-x', title='Genre'),
+        color=alt.Color('Score:Q', scale=alt.Scale(scheme='blues'), legend=None)
+    ).properties(
+        title="Average Score by Genre",
+        width=600,
+        height=chart_height
+    )
+    
+    return chart.to_html()
 
 # { Graph generation functions } ======================================================================================================== #
 
@@ -239,40 +226,144 @@ app = dash.Dash(__name__)
 anime_count_by_date = generate_anime_count_by_date(anime)
 
 app.layout = html.Div([
+    # Main content container
     html.Div([
-        html.Span("Filters", style={'position': 'absolute', 'top': '0', 'left': '0', 'font-size': '24px', 'font-family': 'Arial'}),
-        dcc.Dropdown(
-            id='type-dropdown',
-            className='dropdown-up',  # Link to the CSS class
-            options=[{'label': anime_type, 'value': anime_type} for anime_type in anime['Type'].dropna().unique()],
-            value=anime['Type'].dropna().unique()[0] if not anime['Type'].dropna().empty else None,
-            style={'position': 'absolute', 'top': '16px', 'left': '0', 'width': '100%', 'font-size': '16px', 'font-family': 'Arial', 'border-radius': '8px'},
-            persistence=True,  # Keeps the selected value persistent across callbacks
-            persistence_type='session'
-        )
-    ], style=filter_container_style),
-    dcc.Graph(id='heatmap-graph', style={'position': 'absolute', 'top': '50%', 'left': '50%', 'width': '500px', 'height': '500px', 'transform': 'translate(-50%, -50%)'}),
-    dcc.Graph(id='radar-graph', style={'position': 'absolute', 'top': '18px', 'right': '18px', 'width': '500px', 'height': '500px'}),
-    html.Iframe(id='area-graph', srcDoc=anime_count_by_date, style={'position': 'absolute', 'bottom': '18px', 'right': '18px', 'width': 'calc(100% - 300px)' , 'height': '150px', 'border': 'none', 'background-color': '#E5E5E5', 'overflow': 'hidden', 'border-radius': '16px', 'box-shadow': '0 0 16px rgba(0, 0, 0, 0.25)'}),
-    dcc.Graph( id='altair-graph', config={'displayModeBar': False}, figure={'data': [], 'layout': {'height': 600}}, style={ 'position': 'absolute', 'bottom': '240px', 'left': '18px', 'width': '500px', 'height': '600px', 'overflow': 'hidden'}),    
-    html.Div(id='chart-json', style={'display': 'none'}, children=chart_json),
+        # Top row with radar and bar charts
+        html.Div([
+            # Left side - Bar chart
+            html.Iframe(
+                id='bar-chart',
+                srcDoc='',
+                style={
+                    'width': '30%',
+                    'height': '400px',
+                    'border': 'none',
+                    'backgroundColor': '#E5E5E5',
+                    'borderRadius': '16px',
+                }
+            ),
+            # heatmap in the middle         
+            dcc.Graph(
+                id='heatmap-graph',
+                style={
+                    'width': '30%',
+                    'height': '400px',
+                }
+            ),
+            # Right side - Radar chart
+            dcc.Graph(
+                id='radar-graph',
+                style={
+                    'width': '30%',
+                    'height': '400px',
+                    'minWidth': '300px',
+                }
+            ),
+        ], style={
+            'display': 'flex',
+            'justifyContent': 'space-between',
+            'width': '100%',
+            'marginBottom': '0.5rem',
+        }),
+
+        # # Center - Heatmap
+        # html.Div([
+        # ], style={
+        #     'display': 'flex',
+        #     'justifyContent': 'center',
+        #     'width': '100%',
+        #     'marginBottom': '2rem',
+        # }),
+
+        # Bottom row with filters and time series
+        html.Div([
+            # Left side - Filters
+            html.Div([
+                # Type filter
+                html.Div([
+                    html.Span("Filters", style={'fontSize': '12px', 'fontFamily': 'Arial', 'marginBottom': '0.5rem', 'display': 'block'}),
+                    dcc.Dropdown(
+                        id='type-dropdown',
+                        className='dropdown-up',
+                        options=[{'label': anime_type, 'value': anime_type} for anime_type in anime['Type'].dropna().unique()],
+                        value=anime['Type'].dropna().unique()[0] if not anime['Type'].dropna().empty else None,
+                        style={'width': '100%', 'fontSize': '16px', 'fontFamily': 'Arial', 'borderRadius': '8px'},
+                        persistence=True,
+                        persistence_type='session'
+                    )
+                ], style=filter_container_style),
+                
+                # Genre filter
+                html.Div([
+                    html.Span("Genre Filter", style={'fontSize': '12px', 'fontFamily': 'Arial', 'marginBottom': '0.5rem', 'display': 'block'}),
+                    dcc.Dropdown(
+                        id='genre-dropdown',
+                        className='dropdown-up',
+                        options=[{'label': 'All', 'value': 'All'}] + [
+                            {'label': genre, 'value': genre} 
+                            for genre in sorted(set([g.strip() for genres in anime['Genres'].dropna() for g in genres.split(',')]))
+                        ],
+                        value='All',
+                        style={'width': '100%', 'fontSize': '16px', 'fontFamily': 'Arial', 'borderRadius': '8px'},
+                        persistence=True,
+                        persistence_type='session'
+                    )
+                ], style=genre_filter_container_style),
+            ], style={
+                'width': '20%',
+                'minWidth': '200px',
+                'marginRight': '2rem',
+            }),
+
+            # Right side - Time series
+            html.Iframe(
+                id='area-graph',
+                srcDoc=anime_count_by_date,
+                style={
+                    'width': '75%',
+                    'height': '150px',
+                    'border': 'none',
+                    'backgroundColor': '#E5E5E5',
+                    'borderRadius': '16px',
+                    'boxShadow': '0 0 16px rgba(0, 0, 0, 0.25)'
+                }
+            ),
+        ], style={
+            'display': 'flex',
+            'justifyContent': 'flex-start',
+            'alignItems': 'center',
+            'width': '100%',
+            'marginTop': '10rem',
+        }),
+    ], style={
+        'display': 'flex',
+        'flexDirection': 'column',
+        'height': '100%',
+        'padding': '2rem',
+    }),
 ], style=root_container_style)
 
 @app.callback(
     [Output('heatmap-graph', 'figure'),
      Output('radar-graph', 'figure'),
      Output('area-graph', 'srcDoc'),
-     Output('altair-graph', 'figure')],
+     Output('bar-chart', 'srcDoc')],
     [Input('type-dropdown', 'value'),
-     Input('chart-json', 'children')]
+     Input('genre-dropdown', 'value')]
 )
-def update_graphs(selected_type, chart_json):
+def update_graphs(selected_type, selected_genre):
     processed_anime = data_preprocessing(anime, selected_type)
+    # genre filter
+    if selected_genre:
+        # Explode the "Genres" column to separate rows
+        processed_anime = processed_anime.assign(Genres=processed_anime['Genres'].str.split(', ')).explode('Genres')
+        if selected_genre != 'All':
+            processed_anime = processed_anime[processed_anime['Genres'] == selected_genre]
     heatmap_graph = generate_heatmap(processed_anime)
     radar_graph = generate_radar(processed_anime)
     area_graph = generate_anime_count_by_date(processed_anime)
-    bar_graph = generate_bar(chart_json)
-    return heatmap_graph, radar_graph, area_graph, bar_graph
+    bar_chart = generate_bar(processed_anime)
+    return heatmap_graph, radar_graph, area_graph, bar_chart
 
 if __name__ == '__main__':
     app.run_server(debug=False)
