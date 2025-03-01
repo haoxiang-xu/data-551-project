@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import json
 import plotly.express as px
 import dtl
+import selector
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
 
@@ -37,15 +38,31 @@ genre_filter_container_style = {
     'height': 'auto',
 }
 
+# list of string
+type_options = ['All'] + [anime_type for anime_type in anime['Type'].dropna().unique()]
+genre_options = ['All'] + sorted(set([g.strip() for genres in anime['Genres'].dropna() for g in genres.split(',')]))
+studio_options = ['All'] + sorted(set([s.strip() for studios in anime['Studios'].dropna() for s in studios.split(',')]))
+# { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
+
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
 anime['start_date'] = pd.to_datetime(anime['start_date'])
 anime['end_date'] = pd.to_datetime(anime['end_date'])
-def data_preprocessing(df, selected_type=None):
+def data_preprocessing(df, selected_filters=None):
     df['start_date'] = pd.to_datetime(df['start_date'])
     df['end_date'] = pd.to_datetime(df['end_date'])
     
-    if selected_type and selected_type != 'All':
-        df = df[df['Type'] == selected_type]
+    if selected_filters[0] and selected_filters[0] != 'All':
+        df = df[df['Type'] == selected_filters[0]]
+        
+    if selected_filters[1]:
+        df = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
+        if selected_filters[1] != 'All':
+            df = df[df['Genres'] == selected_filters[1]]
+            
+    if selected_filters[2]:
+        df = df.assign(Studios=df['Studios'].str.split(', ')).explode('Studios')
+        if selected_filters[2] != 'All':
+            df = df[df['Studios'] == selected_filters[2]]
 
     return df
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
@@ -210,15 +227,42 @@ def generate_timeline_component(df):
             y.append(i[1])
 
 
-        return x, y
+        return x[::7], y[::7]
+    def generate_average_score_by_date(df):
+        df = df.iloc[::60, :]
+        df['Score'] = pd.to_numeric(df['Score'], errors='coerce')
+        
+        all_dates_scores = []
+        for _, row in df.iterrows():
+            date_range = pd.date_range(row['start_date'], row['end_date'], freq='D')
+            all_dates_scores.extend([(date, row['Score']) for date in date_range])
+
+        # Convert to DataFrame and calculate average score per date
+        date_scores_df = pd.DataFrame(all_dates_scores, columns=['date', 'score'])
+        average_scores = date_scores_df.groupby('date').agg(
+            avg_score=('score', 'mean'),
+            anime_count=('score', 'count')
+        ).reset_index()
+
+        average_scores
+        #break into x and y x is date y is avg_score both are arrays
+        # convert date to string only date part
+        x = average_scores['date'].tolist()
+        x = [str(i).split
+            (' ')[0] for i in x]
+        y = average_scores['avg_score'].tolist()
+        
+        return x[::7], y[::7]
     
     count_x, count_y = generate_anime_count_by_date(df)
+    score_x, score_y = generate_average_score_by_date(df)
+    
     return dtl.Dtl(
         id='dash-timeline',
         countX=count_x,
         countY=count_y,
-        scoreX=[1970 + i for i in range(56)],
-        scoreY=[i % 5 for i in range(56)],
+        scoreX=score_x,
+        scoreY=score_y
     )
 # { Graph generation functions } ======================================================================================================== #
 
@@ -266,62 +310,6 @@ app.layout = html.Div([
             'width': '100%',
             'marginBottom': '0.5rem',
         }),
-
-        # # Center - Heatmap
-        # html.Div([
-        # ], style={
-        #     'display': 'flex',
-        #     'justifyContent': 'center',
-        #     'width': '100%',
-        #     'marginBottom': '2rem',
-        # }),
-
-        # Bottom row with filters and time series
-        html.Div([
-            # Left side - Filters
-            html.Div([
-                # Type filter
-                html.Div([
-                    html.Span("Filters", style={'fontSize': '12px', 'fontFamily': 'Arial', 'marginBottom': '0.5rem', 'display': 'block'}),
-                    dcc.Dropdown(
-                        id='type-dropdown',
-                        className='dropdown-up',
-                        options=[{'label': anime_type, 'value': anime_type} for anime_type in anime['Type'].dropna().unique()],
-                        value=anime['Type'].dropna().unique()[0] if not anime['Type'].dropna().empty else None,
-                        style={'width': '100%', 'fontSize': '16px', 'fontFamily': 'Arial', 'borderRadius': '8px'},
-                        persistence=True,
-                        persistence_type='session'
-                    )
-                ], style=filter_container_style),
-                
-                # Genre filter
-                html.Div([
-                    html.Span("Genre Filter", style={'fontSize': '12px', 'fontFamily': 'Arial', 'marginBottom': '0.5rem', 'display': 'block'}),
-                    dcc.Dropdown(
-                        id='genre-dropdown',
-                        className='dropdown-up',
-                        options=[{'label': 'All', 'value': 'All'}] + [
-                            {'label': genre, 'value': genre} 
-                            for genre in sorted(set([g.strip() for genres in anime['Genres'].dropna() for g in genres.split(',')]))
-                        ],
-                        value='All',
-                        style={'width': '100%', 'fontSize': '16px', 'fontFamily': 'Arial', 'borderRadius': '8px'},
-                        persistence=True,
-                        persistence_type='session'
-                    )
-                ], style=genre_filter_container_style),
-            ], style={
-                'width': '20%',
-                'minWidth': '200px',
-                'marginRight': '2rem',
-            }),
-        ], style={
-            'display': 'flex',
-            'justifyContent': 'flex-start',
-            'alignItems': 'center',
-            'width': '100%',
-            'marginTop': '10rem',
-        }),
     ], style={
         'position': 'absolute',
         'top': '0',
@@ -330,6 +318,13 @@ app.layout = html.Div([
         'bottom': '0',
     }),
     html.Div(id='dash-timeline-container'),
+    selector.Selector(
+        id='selector',
+        values=['All', 'All', 'All'],
+        typeOptions=type_options,
+        genreOptions=genre_options,
+        studioOptions=studio_options    
+    ),
 ], style=root_container_style)
 
 @app.callback(
@@ -337,17 +332,10 @@ app.layout = html.Div([
      Output('radar-graph', 'figure'),
      Output('bar-chart', 'srcDoc'),
     Output('dash-timeline-container', 'children')],
-    [Input('type-dropdown', 'value'),
-     Input('genre-dropdown', 'value')]
+    [Input('selector', 'values')]
 )
-def update_graphs(selected_type, selected_genre):
-    processed_anime = data_preprocessing(anime, selected_type)
-    # genre filter
-    if selected_genre:
-        # Explode the "Genres" column to separate rows
-        processed_anime = processed_anime.assign(Genres=processed_anime['Genres'].str.split(', ')).explode('Genres')
-        if selected_genre != 'All':
-            processed_anime = processed_anime[processed_anime['Genres'] == selected_genre]
+def update_graphs(selected_filters):
+    processed_anime = data_preprocessing(anime, selected_filters)
     heatmap_graph = generate_heatmap(processed_anime)
     radar_graph = generate_radar(processed_anime)
     bar_chart = generate_bar(processed_anime)
