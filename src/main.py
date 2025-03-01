@@ -14,13 +14,13 @@ anime = pd.read_csv("../data/preprocessed_anime.csv")
 
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 root_container_style = {
-    'position': 'relative',
-    'width': 'calc(100vw - 2rem)', 
-    'height': 'calc(100vh - 2rem)',  
+    'position': 'absolute',
+    'top': '0',
+    'left': '0',
+    'right': '0',
+    'bottom': '0',
     'background-color': '#ECECEC',
-    'overflow': 'hidden', 
-    'padding': '1rem',
-    'box-sizing': 'border-box'
+    'overflow': 'hidden',
 }
 filter_container_style = {
     'position': 'relative',
@@ -228,7 +228,6 @@ app = dash.Dash(__name__)
 
 app.layout = html.Div([
     # Main content container
-    html.Div(id='dash-timeline-container'),
     html.Div([
         # Top row with radar and bar charts
         html.Div([
@@ -324,11 +323,13 @@ app.layout = html.Div([
             'marginTop': '10rem',
         }),
     ], style={
-        'display': 'flex',
-        'flexDirection': 'column',
-        'height': '100%',
-        'padding': '2rem',
+        'position': 'absolute',
+        'top': '0',
+        'left': '0',
+        'right': '0',
+        'bottom': '0',
     }),
+    html.Div(id='dash-timeline-container'),
 ], style=root_container_style)
 
 @app.callback(
