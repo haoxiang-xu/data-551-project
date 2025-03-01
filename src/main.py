@@ -8,6 +8,7 @@ import numpy as np
 import plotly.graph_objects as go
 import json
 import plotly.express as px
+import dtl
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
 
@@ -50,42 +51,6 @@ def data_preprocessing(df, selected_type=None):
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
 
 # { Graph generation functions } ======================================================================================================== #
-def generate_anime_count_by_date(df):
-    all_dates = []
-    
-    df['start_date'] = pd.to_datetime(df['start_date'], errors='coerce')
-    df['end_date'] = pd.to_datetime(df['end_date'], errors='coerce')
-    
-    df = df.dropna(subset=['start_date', 'end_date'])
-    
-    for _, row in df.iterrows():
-        date_range = pd.date_range(row['start_date'], row['end_date'], freq='D')
-        all_dates.extend(date_range)
-
-    # Convert to DataFrame and count occurrences
-    date_counts = pd.DataFrame(all_dates, columns=['date'])
-    date_counts = date_counts.groupby('date').size().reset_index(name='anime_count')
-    date_counts = date_counts.iloc[::30, :]
-
-    # Create the Altair chart
-    chart = alt.Chart(date_counts).mark_area().encode(
-        color=alt.value('#FFFFFF'),
-        x=alt.X('date:T', axis=alt.Axis(grid=False, title=None)),
-        y=alt.Y('anime_count:Q', axis=alt.Axis(grid=False, title=None)),
-        tooltip=['date:T', 'anime_count:Q']
-    ).properties(
-        width='container',
-        height=100,
-        background="#E5E5E5"
-    ).configure_view(
-        strokeWidth=0,
-        fill="#00000000"
-    ).configure_axis(
-        grid=False  # Removes all grid lines
-    )
-    
-    chart.configure_view(strokeWidth=0)
-    return chart.to_html()
 def generate_heatmap(df):
     """
     Create a correlation heatmap based on filtered data
@@ -216,15 +181,54 @@ def generate_bar(df):
     )
     
     return chart.to_html()
+def generate_timeline_component(df):
+    def generate_anime_count_by_date(df):
+        all_dates = []
+        
+        df['start_date'] = pd.to_datetime(df['start_date'], errors='coerce')
+        df['end_date'] = pd.to_datetime(df['end_date'], errors='coerce')
+        
+        df = df.dropna(subset=['start_date', 'end_date'])
+        
+        for _, row in df.iterrows():
+            date_range = pd.date_range(row['start_date'], row['end_date'], freq='D')
+            all_dates.extend(date_range)
+            
+        date_counts = pd.DataFrame(all_dates, columns=['date'])
+        date_counts = date_counts.groupby('date').size().reset_index(name='anime_count')
+        date_counts = date_counts.iloc[::30, :]
+
+        date_counts = date_counts.to_numpy()
+        date_counts = np.array(date_counts)
+        date_counts = date_counts.tolist()
+        
+        x = []
+        y = []
+
+        for i in date_counts:
+            x.append(str(i[0])[:10])
+            y.append(i[1])
+
+
+        return x, y
+    
+    count_x, count_y = generate_anime_count_by_date(df)
+    return dtl.Dtl(
+        id='dash-timeline',
+        countX=count_x,
+        countY=count_y,
+        scoreX=[1970 + i for i in range(56)],
+        scoreY=[i % 5 for i in range(56)],
+    )
 # { Graph generation functions } ======================================================================================================== #
 
 
 # { Dash App } -------------------------------------------------------------------------------------------------------------------------- #
 app = dash.Dash(__name__)
-anime_count_by_date = generate_anime_count_by_date(anime)
 
 app.layout = html.Div([
     # Main content container
+    html.Div(id='dash-timeline-container'),
     html.Div([
         # Top row with radar and bar charts
         html.Div([
@@ -312,20 +316,6 @@ app.layout = html.Div([
                 'minWidth': '200px',
                 'marginRight': '2rem',
             }),
-
-            # Right side - Time series
-            html.Iframe(
-                id='area-graph',
-                srcDoc=anime_count_by_date,
-                style={
-                    'width': '75%',
-                    'height': '150px',
-                    'border': 'none',
-                    'backgroundColor': '#E5E5E5',
-                    'borderRadius': '16px',
-                    'boxShadow': '0 0 16px rgba(0, 0, 0, 0.25)'
-                }
-            ),
         ], style={
             'display': 'flex',
             'justifyContent': 'flex-start',
@@ -344,8 +334,8 @@ app.layout = html.Div([
 @app.callback(
     [Output('heatmap-graph', 'figure'),
      Output('radar-graph', 'figure'),
-     Output('area-graph', 'srcDoc'),
-     Output('bar-chart', 'srcDoc')],
+     Output('bar-chart', 'srcDoc'),
+    Output('dash-timeline-container', 'children')],
     [Input('type-dropdown', 'value'),
      Input('genre-dropdown', 'value')]
 )
@@ -359,9 +349,9 @@ def update_graphs(selected_type, selected_genre):
             processed_anime = processed_anime[processed_anime['Genres'] == selected_genre]
     heatmap_graph = generate_heatmap(processed_anime)
     radar_graph = generate_radar(processed_anime)
-    area_graph = generate_anime_count_by_date(processed_anime)
     bar_chart = generate_bar(processed_anime)
-    return heatmap_graph, radar_graph, area_graph, bar_chart
+    time_line_graph = generate_timeline_component(processed_anime)
+    return heatmap_graph, radar_graph, bar_chart, time_line_graph
 
 if __name__ == '__main__':
     app.run_server(debug=False)
