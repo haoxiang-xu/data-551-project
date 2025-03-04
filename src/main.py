@@ -227,7 +227,7 @@ def generate_timeline_component(df):
             y.append(i[1])
 
 
-        return x[::7], y[::7]
+        return x[::3], y[::3]
     def generate_average_score_by_date(df):
         df = df.iloc[::60, :]
         df['Score'] = pd.to_numeric(df['Score'], errors='coerce')
