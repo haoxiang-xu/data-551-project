@@ -10,6 +10,7 @@ import json
 import plotly.express as px
 import dtl
 import selector
+import bar_plt
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
 
@@ -183,21 +184,14 @@ def generate_bar(df):
     # Take top 5 genres
     top_genres = 10
     bar_height = 30
-    chart_height = top_genres * bar_height + 100
     genre_avg_score = genre_avg_score.head(top_genres)
     
-    # Create Altair chart
-    chart = alt.Chart(genre_avg_score).mark_bar().encode(
-        x=alt.X('Score:Q', title='Average Score'),
-        y=alt.Y('Genres:N', sort='-x', title='Genre'),
-        color=alt.Color('Score:Q', scale=alt.Scale(scheme='blues'), legend=None)
-    ).properties(
-        title="Average Score by Genre",
-        width=600,
-        height=chart_height
-    )
+    res = [{'genre': row['Genres'], 'score': row['Score']} for index, row in genre_avg_score.iterrows()]
     
-    return chart.to_html()
+    return bar_plt.BarPlt(
+        id='dash-bar-chart',
+        data=res,
+    )
 def generate_timeline_component(df):
     def generate_anime_count_by_date(df):
         all_dates = []
@@ -274,20 +268,7 @@ app.layout = html.Div([
     # Main content container
     html.Div([
         # Top row with radar and bar charts
-        html.Div([
-            # Left side - Bar chart
-            html.Iframe(
-                id='bar-chart',
-                srcDoc='',
-                style={
-                    'width': '30%',
-                    'height': '400px',
-                    'border': 'none',
-                    'backgroundColor': '#E5E5E5',
-                    'borderRadius': '16px',
-                }
-            ),
-            # heatmap in the middle         
+        html.Div([      
             dcc.Graph(
                 id='heatmap-graph',
                 style={
@@ -318,6 +299,7 @@ app.layout = html.Div([
         'bottom': '0',
     }),
     html.Div(id='dash-timeline-container'),
+    html.Div(id='dash-bar-chart-container'),
     selector.Selector(
         id='selector',
         values=['All', 'All', 'All'],
@@ -330,8 +312,8 @@ app.layout = html.Div([
 @app.callback(
     [Output('heatmap-graph', 'figure'),
      Output('radar-graph', 'figure'),
-     Output('bar-chart', 'srcDoc'),
-    Output('dash-timeline-container', 'children')],
+     Output('dash-bar-chart-container', 'children'),
+     Output('dash-timeline-container', 'children')],
     [Input('selector', 'values')]
 )
 def update_graphs(selected_filters):
