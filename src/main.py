@@ -11,6 +11,7 @@ import plotly.express as px
 import dtl
 import selector
 from sklearn.preprocessing import LabelEncoder
+import bar_plt
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
 # sampling
@@ -216,41 +217,16 @@ def generate_bar(df):
     
     # Take top 10 genres (keeping it consistent with your original)
     top_genres = 10
+    bar_height = 30
     genre_avg_score = genre_avg_score.head(top_genres)
     
-    # Create Plotly bar chart
-    fig = px.bar(
-        genre_avg_score,
-        x='Score',
-        y='Genres',
-        orientation='h',
-        title='Average Score by Anime Genres',
-        color='Score',  
-        color_continuous_scale='Blues',     
-        height=400,      
-        width=600,
-        text = genre_avg_score['Score']
-    )
-    # use update_trace to show the score label
-    fig.update_traces(
-        textposition='auto',
-        texttemplate='%{text}',
-    )
+    res = [{'genre': row['Genres'], 'score': row['Score']} for index, row in genre_avg_score.iterrows()]
     
-    # Update layout for better appearance
-    fig.update_layout(
-        xaxis_title="Average Score",
-        yaxis_title="Genre",
-        yaxis={'categoryorder': 'total ascending'},  # Sort bars by score
-        coloraxis_showscale=False,  # Hide color scale for cleaner look
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot background
-        paper_bgcolor='rgba(0,0,0,0)',  # Transparent paper background
-        # margin of the plot
-        margin=dict(l=100, r=20, t=50, b=50),
+    return bar_plt.BarPlt(
+        id='dash-bar-chart',
+        data=res,
     )
-    
-    # Return the figure object directly (no need for to_html())
-    return fig
+  
 def generate_timeline_component(df):
     def generate_anime_count_by_date(df):
         all_dates = []
@@ -328,21 +304,7 @@ app.layout = html.Div([
     # Main content container
     html.Div([
         # Top row with radar and bar charts
-        html.Div([
-            # Left side - Bar chart
-            dcc.Graph(
-                id='bar-chart',
-                style={
-                    'width': '30%',
-                    'height': '400px',
-                    'margin-top': '1rem',
-                    'margin-left': '1rem',
-                    'border': 'none',
-                    'backgroundColor': '#E5E5E5',
-                    'borderRadius': '16px',
-                }
-            ),
-            # heatmap in the middle         
+        html.Div([      
             dcc.Graph(
                 id='heatmap-graph',
                 style={
@@ -373,6 +335,7 @@ app.layout = html.Div([
         'bottom': '0',
     }),
     html.Div(id='dash-timeline-container'),
+    html.Div(id='dash-bar-chart-container'),
     selector.Selector(
         id='selector',
         values=['All', 'All', 'All'],
@@ -385,8 +348,8 @@ app.layout = html.Div([
 @app.callback(
     [Output('heatmap-graph', 'figure'),
      Output('radar-graph', 'figure'),
-     Output('bar-chart', 'figure'),
-    Output('dash-timeline-container', 'children')],
+     Output('dash-bar-chart-container', 'children'),
+     Output('dash-timeline-container', 'children')],
     [Input('selector', 'values')]
 )
 def update_graphs(selected_filters):
