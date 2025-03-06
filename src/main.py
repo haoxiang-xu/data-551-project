@@ -10,9 +10,12 @@ import json
 import plotly.express as px
 import dtl
 import selector
+from sklearn.preprocessing import LabelEncoder
 import bar_plt
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
+# sampling
+anime = anime.sample(n=3000, random_state=42)
 
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 root_container_style = {
@@ -46,24 +49,27 @@ studio_options = ['All'] + sorted(set([s.strip() for studios in anime['Studios']
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
-anime['start_date'] = pd.to_datetime(anime['start_date'])
-anime['end_date'] = pd.to_datetime(anime['end_date'])
+# anime['start_date'] = pd.to_datetime(anime['start_date'])
+# anime['end_date'] = pd.to_datetime(anime['end_date'])
 def data_preprocessing(df, selected_filters=None):
+    df = df.copy()
     df['start_date'] = pd.to_datetime(df['start_date'])
     df['end_date'] = pd.to_datetime(df['end_date'])
     
     if selected_filters[0] and selected_filters[0] != 'All':
         df = df[df['Type'] == selected_filters[0]]
-        
-    if selected_filters[1]:
-        df = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
-        if selected_filters[1] != 'All':
-            df = df[df['Genres'] == selected_filters[1]]
             
     if selected_filters[2]:
-        df = df.assign(Studios=df['Studios'].str.split(', ')).explode('Studios')
         if selected_filters[2] != 'All':
             df = df[df['Studios'] == selected_filters[2]]
+    
+    # make sure the explode is done after type and studio filter
+    df = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
+
+    # make sure the genre filter happen after the explode
+    if selected_filters[1]:
+        if selected_filters[1] != 'All':
+            df = df[df['Genres'] == selected_filters[1]]    
 
     return df
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
@@ -80,67 +86,94 @@ def generate_heatmap(df):
     selected_type : str, optional
         The type of anime to filter by (e.g., 'TV', 'Movie', etc.)
     """
-    # Define numeric columns
-    numeric_columns = df.select_dtypes(include=[np.number]).columns
+    # copy the dataframe
+    df = df.copy()
+    
+    # Explode Genres with comma (assuming multi-genre entries)
+    df = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
+    
+    # Convert Aired to datetime and extract year
+    df['Aired'] = pd.to_datetime(df['Aired'], errors='coerce')
+    df['Aired'] = df['Aired'].dt.year
+    
+    # Define important columns
+    important_columns = ['Genres', 'Type', 'Episodes', 'Aired', 'Studios', 'Members', 'Score', 'Popularity']
+    df_subset = df[important_columns].dropna()
+    
+    # Convert categorical columns to integers using LabelEncoder
+    le = LabelEncoder()
+    df_subset['Genres'] = le.fit_transform(df_subset['Genres'])
+    df_subset['Type'] = le.fit_transform(df_subset['Type'])
+    df_subset['Studios'] = le.fit_transform(df_subset['Studios'])
 
+    # negate the popularity for making it more intuitive for ranking
+    df_subset['Popularity'] = -df_subset['Popularity']
+    
+    # Define target variables
+    target_vars = ['Score', 'Popularity']
+    
+    # Get all columns for correlation
+    all_columns = df_subset.columns
+    
     # Calculate correlation matrix
-    correlation_matrix = df[numeric_columns].corr()
+    correlation_matrix = df_subset[all_columns].corr()
+    
+    # Filter out the row with column and column with target variables   
+    corr_with_targets = correlation_matrix.loc[all_columns, target_vars]
     
     # Heatmap creation
     fig = go.Figure(data=go.Heatmap(
-        z=correlation_matrix,
-        x=numeric_columns,
-        y=numeric_columns,
+        z=corr_with_targets.values,
+        x=target_vars,
+        y=all_columns,
         hoverongaps=False,
         zmin=-1, zmax=1,
-        colorscale=[
-            [0, "rgb(240, 240, 255)"],  # Light Blue
-            [0.5, "rgb(180, 180, 250)"],  # Medium Blue
-            [1, "rgb(120, 120, 200)"]  # Darker Blue
-        ],
-        text=np.round(correlation_matrix, 2),
+        colorscale = 'Blues',
+        text=np.round(corr_with_targets.values, 2),
         texttemplate='%{text}',
         textfont={"size": 12},
-        showscale=False,  # Hide the color scale for a clean look
+        showscale=False,
     ))
 
-    # Layout adjustments to match the uploaded style
     fig.update_layout(
-        xaxis_title="Metrics",
-        yaxis_title="Metrics",
-        height=500,  # Reduce height to be more square-like
+        title="Correlation Heatmap For Finding Impactful Predictors",
+        xaxis_title="Target Variables",
+        yaxis_title="Predictors",
+        height=500, 
         width=500,
         xaxis=dict(
             showgrid=False,
             zeroline=False,
-            showticklabels=False  # Hide axis labels
+            # show the predictors names as labels
+            showticklabels=True
         ),
         yaxis=dict(
             showgrid=False,
             zeroline=False,
-            showticklabels=False  # Hide axis labels
+            showticklabels=True 
         ),
         margin=dict(l=50, r=50, t=50, b=50),
-        paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot area
+        # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)',  
+        plot_bgcolor='rgba(0,0,0,0)', 
     )
 
     return fig
 def generate_radar(df):
     # Explode the Genres column to assign each anime to multiple genres
-    df_exploded = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
+    # df_exploded = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
 
     # Count the frequency of each genre and select the top 10 most frequent ones
-    top_genres = df_exploded['Genres'].value_counts().head(10).index
+    top_genres = df['Genres'].value_counts().head(10).index
 
     # Filter dataset to include only the top 10 genres
-    df_exploded = df_exploded[df_exploded['Genres'].isin(top_genres)]
+    df = df[df['Genres'].isin(top_genres)]
 
     # Select relevant numerical columns
     columns = ['Score', 'Members', 'Popularity', 'Completed', 'On-Hold', 'Dropped']
 
     # Aggregate by genre, computing the mean for each variable
-    df_genre_avg = df_exploded.groupby('Genres')[columns].mean().reset_index()
+    df_genre_avg = df.groupby('Genres')[columns].mean().reset_index()
 
     # Normalize values for better visualization (Min-Max Scaling)
     df_genre_avg[columns] = (df_genre_avg[columns] - df_genre_avg[columns].min()) / \
@@ -178,10 +211,11 @@ def generate_radar(df):
     return fig
 def generate_bar(df):
     # Create and process data
-    genre_avg_score = df.groupby('Genres')['Score'].mean().reset_index()
+    genre_avg_score = df.groupby('Genres')['Score'].mean().round(2).reset_index()
+    # sort by score descending
     genre_avg_score = genre_avg_score.sort_values(by='Score', ascending=False)
     
-    # Take top 5 genres
+    # Take top 10 genres (keeping it consistent with your original)
     top_genres = 10
     bar_height = 30
     genre_avg_score = genre_avg_score.head(top_genres)
@@ -192,6 +226,7 @@ def generate_bar(df):
         id='dash-bar-chart',
         data=res,
     )
+  
 def generate_timeline_component(df):
     def generate_anime_count_by_date(df):
         all_dates = []
@@ -262,6 +297,7 @@ def generate_timeline_component(df):
 
 
 # { Dash App } -------------------------------------------------------------------------------------------------------------------------- #
+# initialize dash app
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
