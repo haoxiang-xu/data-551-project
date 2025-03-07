@@ -15,6 +15,7 @@ import dtl
 import selector
 import bar_plt
 import widgets
+import radar
 # { npm components } -------------------------------------------------------------------------------------------------------------------- #
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
@@ -164,55 +165,44 @@ def generate_heatmap(df):
 
     return fig
 def generate_radar(df):
-    # Explode the Genres column to assign each anime to multiple genres
-    # df_exploded = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
+    df_exploded = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
 
     # Count the frequency of each genre and select the top 10 most frequent ones
-    top_genres = df['Genres'].value_counts().head(10).index
+    top_genres = df_exploded['Genres'].value_counts().head(10).index
 
     # Filter dataset to include only the top 10 genres
-    df = df[df['Genres'].isin(top_genres)]
+    df_exploded = df_exploded[df_exploded['Genres'].isin(top_genres)]
 
     # Select relevant numerical columns
     columns = ['Score', 'Members', 'Popularity', 'Completed', 'On-Hold', 'Dropped']
 
     # Aggregate by genre, computing the mean for each variable
-    df_genre_avg = df.groupby('Genres')[columns].mean().reset_index()
+    df_genre_avg_original = df_exploded.groupby('Genres')[columns].mean().reset_index()
+
+    # Store the original mean data before normalization
+    df_genre_avg = df_genre_avg_original.copy()
 
     # Normalize values for better visualization (Min-Max Scaling)
     df_genre_avg[columns] = (df_genre_avg[columns] - df_genre_avg[columns].min()) / \
                             (df_genre_avg[columns].max() - df_genre_avg[columns].min())
 
-    # Compute angle for each axis
-    num_vars = len(columns)
-    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    angles += angles[:1]  # Close the circle
+    json_data = [
+        {
+            "genre": row["Genres"],
+            "Score": round(row["Score"], 3),
+            "Members": round(row["Members"], 3),
+            "Popularity": round(row["Popularity"], 3),
+            "Completed": round(row["Completed"], 3),
+            "OnHold": round(row["On-Hold"], 3),
+            "Dropped": round(row["Dropped"], 3),
+        }
+        for _, row in df_genre_avg.iterrows()
+    ]
 
-    # Create the radar chart
-    fig = go.Figure()
-
-    # Plot each of the top 10 genres
-    for _, row in df_genre_avg.iterrows():
-        values = row[columns].values.flatten().tolist()
-        values += values[:1]  # Close the circle
-
-        fig.add_trace(go.Scatterpolar(
-            r=values,
-            theta=columns + [columns[0]],
-            fill='toself',
-            name=row['Genres']
-        ))
-
-    # Update layout
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(visible=True)
-        ),
-        title="Radar Chart for Top 10 Most Frequent Anime Genres",
-        showlegend=True
+    return radar.Radar(
+        id='dash-radar-chart',
+        data=json_data,
     )
-    
-    return fig
 def generate_bar(df):
     # Create and process data
     genre_avg_score = df.groupby('Genres')['Score'].mean().round(2).reset_index()
@@ -329,15 +319,6 @@ app.layout = html.Div([
                     'height': '400px',
                 }
             ),
-            # Right side - Radar chart
-            dcc.Graph(
-                id='radar-graph',
-                style={
-                    'width': '30%',
-                    'height': '400px',
-                    'minWidth': '300px',
-                }
-            ),
         ], style={
             'display': 'flex',
             'justifyContent': 'space-between',
@@ -351,6 +332,7 @@ app.layout = html.Div([
         'right': '0',
         'bottom': '0',
     }),
+    html.Div(id='dash-radar-chart-container'),
     html.Div(id='dash-timeline-container'),
     html.Div(id='dash-bar-chart-container'),
     html.Div(id='dash-widgets-container'),
@@ -365,7 +347,7 @@ app.layout = html.Div([
 
 @app.callback(
     [Output('heatmap-graph', 'figure'),
-     Output('radar-graph', 'figure'),
+     Output('dash-radar-chart-container', 'children'),
      Output('dash-bar-chart-container', 'children'),
      Output('dash-timeline-container', 'children'),
      Output('dash-widgets-container', 'children')],
