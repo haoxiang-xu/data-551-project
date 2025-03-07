@@ -8,10 +8,14 @@ import numpy as np
 import plotly.graph_objects as go
 import json
 import plotly.express as px
+from sklearn.preprocessing import LabelEncoder
+
+# { npm components } -------------------------------------------------------------------------------------------------------------------- #
 import dtl
 import selector
-from sklearn.preprocessing import LabelEncoder
 import bar_plt
+import widgets
+# { npm components } -------------------------------------------------------------------------------------------------------------------- #
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
 # sampling
@@ -226,7 +230,6 @@ def generate_bar(df):
         id='dash-bar-chart',
         data=res,
     )
-  
 def generate_timeline_component(df):
     def generate_anime_count_by_date(df):
         all_dates = []
@@ -293,8 +296,22 @@ def generate_timeline_component(df):
         scoreX=score_x,
         scoreY=score_y
     )
+def generate_widgets(df):
+    def get_top_3_animes(df):
+        top_3 = df.nlargest(3, "Score")[["Name", "Score"]]
+        return [{"title": row["Name"], "score": f"{row['Score']:.2f}"} for _, row in top_3.iterrows()]
+    def get_average_score(df):
+        return round(df["Score"].mean(), 2)
+    
+    top_3_animes = get_top_3_animes(df)
+    average_score = get_average_score(df)
+    
+    return widgets.Widgets(
+        id='dash-widgets',
+        top_3=top_3_animes,
+        average_score=average_score
+    )
 # { Graph generation functions } ======================================================================================================== #
-
 
 # { Dash App } -------------------------------------------------------------------------------------------------------------------------- #
 # initialize dash app
@@ -336,6 +353,7 @@ app.layout = html.Div([
     }),
     html.Div(id='dash-timeline-container'),
     html.Div(id='dash-bar-chart-container'),
+    html.Div(id='dash-widgets-container'),
     selector.Selector(
         id='selector',
         values=['All', 'All', 'All'],
@@ -349,7 +367,8 @@ app.layout = html.Div([
     [Output('heatmap-graph', 'figure'),
      Output('radar-graph', 'figure'),
      Output('dash-bar-chart-container', 'children'),
-     Output('dash-timeline-container', 'children')],
+     Output('dash-timeline-container', 'children'),
+     Output('dash-widgets-container', 'children')],
     [Input('selector', 'values')]
 )
 def update_graphs(selected_filters):
@@ -358,7 +377,8 @@ def update_graphs(selected_filters):
     radar_graph = generate_radar(processed_anime)
     bar_chart = generate_bar(processed_anime)
     time_line_graph = generate_timeline_component(processed_anime)
-    return heatmap_graph, radar_graph, bar_chart, time_line_graph
+    widgets = generate_widgets(processed_anime)
+    return heatmap_graph, radar_graph, bar_chart, time_line_graph, widgets
 
 if __name__ == '__main__':
     app.run_server(debug=False)
