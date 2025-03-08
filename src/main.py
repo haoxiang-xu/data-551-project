@@ -279,20 +279,28 @@ def generate_timeline_component(df):
     count_x, count_y = generate_anime_count_by_date(df)
     score_x, score_y = generate_average_score_by_date(df)
     
-    combined_x = sorted(set(count_x + score_x))
-    count_dict = dict(zip(count_x, count_y))
-    score_dict = dict(zip(score_x, score_y))
-    aligned_count_y = [count_dict.get(date, 0) for date in combined_x]
-    aligned_score_y = [score_dict.get(date, 0) for date in combined_x]
+    if count_x[0] < score_x[0]:
+        score_x.insert(0, count_x[0])
+        score_y.insert(0, 0)
+    elif count_x[0] > score_x[0]:
+        count_x.insert(0, score_x[0])
+        count_y.insert(0, 0)
+
+    # Ensure the end range matches
+    if count_x[-1] > score_x[-1]:
+        score_x.append(count_x[-1])
+        score_y.append(0)
+    elif count_x[-1] < score_x[-1]:
+        count_x.append(score_x[-1])
+        count_y.append(0)
     
     return dtl.Dtl(
         id='dash-timeline',
-        countX=combined_x,
-        countY=aligned_count_y,
-        scoreX=combined_x,
-        scoreY=aligned_score_y
+        countX=count_x,
+        countY=count_y,
+        scoreX=score_x,
+        scoreY=score_y
     )
-
 def generate_widgets(df):
     def get_top_3_animes(df):
         top_scores = (
