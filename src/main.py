@@ -279,17 +279,30 @@ def generate_timeline_component(df):
     count_x, count_y = generate_anime_count_by_date(df)
     score_x, score_y = generate_average_score_by_date(df)
     
+    combined_x = sorted(set(count_x + score_x))
+    count_dict = dict(zip(count_x, count_y))
+    score_dict = dict(zip(score_x, score_y))
+    aligned_count_y = [count_dict.get(date, 0) for date in combined_x]
+    aligned_score_y = [score_dict.get(date, 0) for date in combined_x]
+    
     return dtl.Dtl(
         id='dash-timeline',
-        countX=count_x,
-        countY=count_y,
-        scoreX=score_x,
-        scoreY=score_y
+        countX=combined_x,
+        countY=aligned_count_y,
+        scoreX=combined_x,
+        scoreY=aligned_score_y
     )
+
 def generate_widgets(df):
     def get_top_3_animes(df):
-        top_3 = df.nlargest(3, "Score")[["Name", "Score"]]
-        return [{"title": row["Name"], "score": f"{row['Score']:.2f}"} for _, row in top_3.iterrows()]
+        top_scores = (
+            df.dropna(subset=['Name', 'Score'])
+            .sort_values(by='Score', ascending=False)
+            .drop_duplicates(subset='Name')
+            .head(3)[['Name', 'Score']])
+    
+        return [{"title": row["Name"], "score": f"{row['Score']:.2f}"} for _, row in top_scores.iterrows()]
+
     def get_average_score(df):
         return round(df["Score"].mean(), 2)
     
