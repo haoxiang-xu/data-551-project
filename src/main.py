@@ -9,6 +9,8 @@ import plotly.graph_objects as go
 import json
 import plotly.express as px
 from sklearn.preprocessing import LabelEncoder
+from plotly.subplots import make_subplots
+from pycountry_convert import country_name_to_country_alpha2, country_alpha2_to_continent_code
 
 # { npm components } -------------------------------------------------------------------------------------------------------------------- #
 import dtl
@@ -21,6 +23,10 @@ import radar
 anime = pd.read_csv("../data/preprocessed_anime.csv")
 # sampling
 anime = anime.sample(n=3000, random_state=42)
+
+# Load data for map component.
+df_viewers = pd.read_csv("../data/anime_viewers_cleaned.csv")
+df_viewers = df_viewers[df_viewers["viewers"] >= 100]
 
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 root_container_style = {
@@ -322,6 +328,112 @@ def generate_widgets(df):
         top_3=top_3_animes,
         average_score=average_score
     )
+
+# { Map component } ------------------------------------------------------------------------------------------------------------------------ #
+def get_continent(country):
+    """
+    Get the continent of a country.
+    """
+    try:
+        country_code = country_name_to_country_alpha2(country)
+        continent_code = country_alpha2_to_continent_code(country_code)
+        continent_map = {
+            "NA": "North America",
+            "SA": "South America",
+            "EU": "Europe",
+            "AF": "Africa",
+            "AS": "Asia",
+            "OC": "Oceania",
+        }
+        return continent_map.get(continent_code, "Other")
+    except:
+        return "Unknown"
+
+# Apply function to get continent
+df_viewers["continent"] = df_viewers["country"].apply(get_continent)
+df_viewers = df_viewers[df_viewers["continent"] != "Unknown"]
+
+# Get top countries per continent
+top_countries = df_viewers.loc[df_viewers.groupby("continent")["viewers"].idxmax()]
+
+# Define continent zoom settings
+continent_scopes = {
+    "North America": "north america",
+    "South America": "south america",
+    "Europe": "europe",
+    "Asia": "asia",
+    "Africa": "africa"
+}
+
+# Define positions in subplots
+continent_positions = {
+    "North America": (1, 1),
+    "South America": (1, 2),
+    "Europe": (2, 1),
+    "Asia": (2, 2),
+    "Africa": (3, 1),
+    "Oceania": (3, 2),
+}
+
+def generate_global_viewers_map():
+    """
+    Generate a map of the global anime viewers.
+    """
+    subplot_titles = []
+    for continent in continent_positions.keys():
+        top_row = top_countries[top_countries["continent"] == continent]
+        if not top_row.empty:
+            top_country = top_row.iloc[0]["country"]
+            top_viewers = top_row.iloc[0]["viewers"]
+            subplot_titles.append(f"{continent}<br>(Most Viewers in {top_country}: {top_viewers:,})")
+        else:
+            subplot_titles.append(continent)
+    
+    fig = make_subplots(
+        rows=3, cols=2,
+        subplot_titles=subplot_titles,
+        specs=[[{"type": "choropleth"}, {"type": "choropleth"}],
+               [{"type": "choropleth"}, {"type": "choropleth"}],
+               [{"type": "choropleth"}, {"type": "choropleth"}]]
+    )
+
+    for continent, (row, col) in continent_positions.items():
+        continent_data = df_viewers[df_viewers["continent"] == continent]
+        if not continent_data.empty:
+            fig.add_trace(
+                go.Choropleth(
+                    locations=continent_data["country"],
+                    locationmode="country names",
+                    z=continent_data["viewers"],
+                    colorscale="Blues",
+                    showscale=False,  
+                ),
+                row=row, col=col
+            )
+    
+    fig.update_layout(
+        title_text="Global Anime Viewers by Continent",
+        geo=dict(showframe=False, showcoastlines=True),
+        # control the height of the map
+        height=720,
+        title_font_size=18, 
+        # access the size attribute in the font dict from the annotations
+        annotations=[dict(font=dict(size=12))],
+    )
+    
+    for continent, scope in continent_scopes.items():
+        row, col = continent_positions[continent]
+        fig.update_geos(scope=scope, row=row, col=col)
+    
+    fig.update_geos(
+        row=3, col=2,
+        projection_type="natural earth",
+        center={"lat": -25, "lon": 140}, 
+        projection_scale=3.5,
+        showcoastlines=True
+    )
+    
+    return fig
 # { Graph generation functions } ======================================================================================================== #
 
 # { Dash App } -------------------------------------------------------------------------------------------------------------------------- #
@@ -330,29 +442,58 @@ app = dash.Dash(__name__)
 
 app.layout = html.Div([
     # Main content container
-    html.Div([
-        # Top row with radar and bar charts
-        html.Div([      
-            dcc.Graph(
-                id='heatmap-graph',
-                style={
-                    'width': '30%',
-                    'height': '400px',
-                }
-            ),
-        ], style={
-            'display': 'flex',
-            'justifyContent': 'space-between',
-            'width': '100%',
-            'marginBottom': '0.5rem',
-        }),
+html.Div([
+    # Centered graph container
+    html.Div([      
+        dcc.Graph(
+            id='heatmap-graph',
+            style={
+                'width': '50vw', 
+                'height': '50vh', 
+                'maxWidth': '600px',  
+                'maxHeight': '500px',
+                'minHeight': '300px',
+            }
+        ),
     ], style={
-        'position': 'absolute',
-        'top': '0',
-        'left': '0',
-        'right': '0',
-        'bottom': '0',
-    }),
+        'display': 'flex',
+        # Horizontally center
+        'justifyContent': 'center', 
+         # Vertically center
+        'alignItems': 'center', 
+        'width': '100%',
+        'minHeight': '60vh',
+    })
+], style={
+    'position': 'absolute',
+    'top': '0',
+    'left': '0',
+    'right': '0',
+    'bottom': '0',
+    'display': 'flex',
+    'justifyContent': 'center', 
+    'alignItems': 'center', 
+    # Background color to match your theme
+    'backgroundColor': '#ECECEC', 
+}),
+html.Div([
+        html.Div([
+        dcc.Graph(
+            id='global-viewers-map',
+            style={
+                'width': '31vw',
+            }
+        )
+    ], style={
+        'width': '100%',
+    })
+], style={
+    'position': 'absolute',
+    'top': '0',
+    'left': '0',
+    'right': '0',
+    'bottom': '0',
+}),
     html.Div(id='dash-radar-chart-container'),
     html.Div(id='dash-timeline-container'),
     html.Div(id='dash-bar-chart-container'),
@@ -371,7 +512,8 @@ app.layout = html.Div([
      Output('dash-radar-chart-container', 'children'),
      Output('dash-bar-chart-container', 'children'),
      Output('dash-timeline-container', 'children'),
-     Output('dash-widgets-container', 'children')],
+     Output('dash-widgets-container', 'children'),
+     Output('global-viewers-map', 'figure')],
     [Input('selector', 'values')]
 )
 def update_graphs(selected_filters):
@@ -381,7 +523,8 @@ def update_graphs(selected_filters):
     bar_chart = generate_bar(processed_anime)
     time_line_graph = generate_timeline_component(processed_anime)
     widgets = generate_widgets(processed_anime)
-    return heatmap_graph, radar_graph, bar_chart, time_line_graph, widgets
+    global_viewers_map = generate_global_viewers_map()
+    return heatmap_graph, radar_graph, bar_chart, time_line_graph, widgets, global_viewers_map
 
 if __name__ == '__main__':
     app.run_server(debug=False)
