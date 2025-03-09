@@ -18,6 +18,7 @@ import selector
 import bar_plt
 import widgets
 import radar
+import heatmap
 # { npm components } -------------------------------------------------------------------------------------------------------------------- #
 
 anime = pd.read_csv("../data/preprocessed_anime.csv")
@@ -98,7 +99,7 @@ def generate_heatmap(df):
         The type of anime to filter by (e.g., 'TV', 'Movie', etc.)
     """
     # copy the dataframe
-    df = df.copy()
+    df = df.copy().fillna(0)
     
     # Explode Genres with comma (assuming multi-genre entries)
     df = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
@@ -128,48 +129,19 @@ def generate_heatmap(df):
     
     # Calculate correlation matrix
     correlation_matrix = df_subset[all_columns].corr()
+    correlation_matrix = correlation_matrix.fillna(0)
     
     # Filter out the row with column and column with target variables   
     corr_with_targets = correlation_matrix.loc[all_columns, target_vars]
     
-    # Heatmap creation
-    fig = go.Figure(data=go.Heatmap(
-        z=corr_with_targets.values,
-        x=target_vars,
-        y=all_columns,
-        hoverongaps=False,
-        zmin=-1, zmax=1,
-        colorscale = 'Blues',
-        text=np.round(corr_with_targets.values, 2),
-        texttemplate='%{text}',
-        textfont={"size": 12},
-        showscale=False,
-    ))
-
-    fig.update_layout(
-        title="Correlation Heatmap For Finding Impactful Predictors",
-        xaxis_title="Target Variables",
-        yaxis_title="Predictors",
-        height=500, 
-        width=500,
-        xaxis=dict(
-            showgrid=False,
-            zeroline=False,
-            # show the predictors names as labels
-            showticklabels=True
-        ),
-        yaxis=dict(
-            showgrid=False,
-            zeroline=False,
-            showticklabels=True 
-        ),
-        margin=dict(l=50, r=50, t=50, b=50),
-        # Transparent background
-        paper_bgcolor='rgba(0,0,0,0)',  
-        plot_bgcolor='rgba(0,0,0,0)', 
+    # Convert to JSON-like dictionary
+    correlation_json = corr_with_targets.copy().round(2).to_dict()
+    print(correlation_json)
+    
+    return heatmap.Heatmap(
+        id='dash-heatmap',
+        data=correlation_json,
     )
-
-    return fig
 def generate_radar(df):
     df_exploded = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
 
@@ -257,7 +229,7 @@ def generate_timeline_component(df):
 
         return x[::3], y[::3]
     def generate_average_score_by_date(df):
-        df = df.iloc[::60, :]
+        df = df.iloc[::60, :].copy()
         df['Score'] = pd.to_numeric(df['Score'], errors='coerce')
         
         all_dates_scores = []
@@ -443,27 +415,6 @@ app = dash.Dash(__name__)
 app.layout = html.Div([
     # Main content container
 html.Div([
-    # Centered graph container
-    html.Div([      
-        dcc.Graph(
-            id='heatmap-graph',
-            style={
-                'width': '50vw', 
-                'height': '50vh', 
-                'maxWidth': '600px',  
-                'maxHeight': '500px',
-                'minHeight': '300px',
-            }
-        ),
-    ], style={
-        'display': 'flex',
-        # Horizontally center
-        'justifyContent': 'center', 
-         # Vertically center
-        'alignItems': 'center', 
-        'width': '100%',
-        'minHeight': '60vh',
-    })
 ], style={
     'position': 'absolute',
     'top': '0',
@@ -498,6 +449,7 @@ html.Div([
     html.Div(id='dash-timeline-container'),
     html.Div(id='dash-bar-chart-container'),
     html.Div(id='dash-widgets-container'),
+    html.Div(id='dash-heatmap-container'),
     selector.Selector(
         id='selector',
         values=['All', 'All', 'All'],
@@ -508,7 +460,7 @@ html.Div([
 ], style=root_container_style)
 
 @app.callback(
-    [Output('heatmap-graph', 'figure'),
+    [Output('dash-heatmap-container', 'children'),
      Output('dash-radar-chart-container', 'children'),
      Output('dash-bar-chart-container', 'children'),
      Output('dash-timeline-container', 'children'),
