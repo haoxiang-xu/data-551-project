@@ -136,7 +136,6 @@ def generate_heatmap(df):
     
     # Convert to JSON-like dictionary
     correlation_json = corr_with_targets.copy().round(2).to_dict()
-    print(correlation_json)
     
     return heatmap.Heatmap(
         id='dash-heatmap',
@@ -349,62 +348,32 @@ continent_positions = {
 
 def generate_global_viewers_map():
     """
-    Generate a map of the global anime viewers.
+    Generate a map of the global anime viewers with full width and height.
     """
-    subplot_titles = []
-    for continent in continent_positions.keys():
-        top_row = top_countries[top_countries["continent"] == continent]
-        if not top_row.empty:
-            top_country = top_row.iloc[0]["country"]
-            top_viewers = top_row.iloc[0]["viewers"]
-            subplot_titles.append(f"{continent}<br>(Most Viewers in {top_country}: {top_viewers:,})")
-        else:
-            subplot_titles.append(continent)
-    
-    fig = make_subplots(
-        rows=3, cols=2,
-        subplot_titles=subplot_titles,
-        specs=[[{"type": "choropleth"}, {"type": "choropleth"}],
-               [{"type": "choropleth"}, {"type": "choropleth"}],
-               [{"type": "choropleth"}, {"type": "choropleth"}]]
+    fig = go.Figure(
+        data=go.Choropleth(
+            locations=df_viewers["country"],
+            locationmode="country names",
+            z=df_viewers["viewers"],
+            colorscale="Blues",
+            marker_line_color='darkgray',
+            marker_line_width=0.5,
+            colorbar_title="Viewers",
+        )
     )
-
-    for continent, (row, col) in continent_positions.items():
-        continent_data = df_viewers[df_viewers["continent"] == continent]
-        if not continent_data.empty:
-            fig.add_trace(
-                go.Choropleth(
-                    locations=continent_data["country"],
-                    locationmode="country names",
-                    z=continent_data["viewers"],
-                    colorscale="Blues",
-                    showscale=False,  
-                ),
-                row=row, col=col
-            )
-    
+ 
     fig.update_layout(
-        title_text="Global Anime Viewers by Continent",
-        geo=dict(showframe=False, showcoastlines=True),
-        # control the height of the map
-        height=720,
-        title_font_size=18, 
-        # access the size attribute in the font dict from the annotations
-        annotations=[dict(font=dict(size=12))],
+        autosize=False,  # Enables automatic resizing
+        width=None,  # Allows the container to determine width
+        height=None,  # Allows the container to determine height
+        geo=dict(
+            showframe=False,
+            showcoastlines=False,
+            projection_type="natural earth"
+        ),
+        title_font_size=18
     )
-    
-    for continent, scope in continent_scopes.items():
-        row, col = continent_positions[continent]
-        fig.update_geos(scope=scope, row=row, col=col)
-    
-    fig.update_geos(
-        row=3, col=2,
-        projection_type="natural earth",
-        center={"lat": -25, "lon": 140}, 
-        projection_scale=3.5,
-        showcoastlines=True
-    )
-    
+ 
     return fig
 # { Graph generation functions } ======================================================================================================== #
 
@@ -413,37 +382,27 @@ def generate_global_viewers_map():
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
-    # Main content container
 html.Div([
+    dcc.Graph(
+        id='global-viewers-map',
+        style={
+            'position': 'absolute',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+        }
+    )
 ], style={
     'position': 'absolute',
-    'top': '0',
-    'left': '0',
-    'right': '0',
-    'bottom': '0',
-    'display': 'flex',
-    'justifyContent': 'center', 
-    'alignItems': 'center', 
-    # Background color to match your theme
-    'backgroundColor': '#ECECEC', 
-}),
-html.Div([
-        html.Div([
-        dcc.Graph(
-            id='global-viewers-map',
-            style={
-                'width': '31vw',
-            }
-        )
-    ], style={
-        'width': '100%',
-    })
-], style={
-    'position': 'absolute',
-    'top': '0',
-    'left': '0',
-    'right': '0',
-    'bottom': '0',
+    'top': '216px',
+    'left': '18px',
+    'width': 'calc(66% - 36px)',
+    'bottom': '186px',
+    'overflow': 'hidden',
+    'background-color': 'white',
+    'border-radius': '4px',
+    'box-shadow': '0 0 10px rgba(0, 0, 0, 0.1)',
 }),
     html.Div(id='dash-radar-chart-container'),
     html.Div(id='dash-timeline-container'),
