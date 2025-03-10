@@ -301,7 +301,7 @@ def generate_widgets(df):
     )
 
 # { Map component } ------------------------------------------------------------------------------------------------------------------------ #
-def get_continent(country):
+# def get_continent(country):
     """
     Get the continent of a country.
     """
@@ -321,30 +321,30 @@ def get_continent(country):
         return "Unknown"
 
 # Apply function to get continent
-df_viewers["continent"] = df_viewers["country"].apply(get_continent)
-df_viewers = df_viewers[df_viewers["continent"] != "Unknown"]
+# df_viewers["continent"] = df_viewers["country"].apply(get_continent)
+# df_viewers = df_viewers[df_viewers["continent"] != "Unknown"]
 
-# Get top countries per continent
-top_countries = df_viewers.loc[df_viewers.groupby("continent")["viewers"].idxmax()]
+# # Get top countries per continent
+# top_countries = df_viewers.loc[df_viewers.groupby("continent")["viewers"].idxmax()]
 
-# Define continent zoom settings
-continent_scopes = {
-    "North America": "north america",
-    "South America": "south america",
-    "Europe": "europe",
-    "Asia": "asia",
-    "Africa": "africa"
-}
+# # Define continent zoom settings
+# continent_scopes = {
+#     "North America": "north america",
+#     "South America": "south america",
+#     "Europe": "europe",
+#     "Asia": "asia",
+#     "Africa": "africa"
+# }
 
-# Define positions in subplots
-continent_positions = {
-    "North America": (1, 1),
-    "South America": (1, 2),
-    "Europe": (2, 1),
-    "Asia": (2, 2),
-    "Africa": (3, 1),
-    "Oceania": (3, 2),
-}
+# # Define positions in subplots
+# continent_positions = {
+#     "North America": (1, 1),
+#     "South America": (1, 2),
+#     "Europe": (2, 1),
+#     "Asia": (2, 2),
+#     "Africa": (3, 1),
+#     "Oceania": (3, 2),
+# }
 
 def generate_global_viewers_map():
     """
@@ -355,7 +355,7 @@ def generate_global_viewers_map():
             locations=df_viewers["country"],
             locationmode="country names",
             z=df_viewers["viewers"],
-            colorscale="Blues",
+            colorscale="YlOrRd",
             marker_line_color='darkgray',
             marker_line_width=0.5,
             colorbar_title="Viewers",
@@ -364,8 +364,9 @@ def generate_global_viewers_map():
  
     fig.update_layout(
         autosize=False,  # Enables automatic resizing
-        width=None,  # Allows the container to determine width
-        height=None,  # Allows the container to determine height
+        width=None,  
+        height=None,  
+        margin=dict(l=0, r=0, t=0, b=0, pad=0),
         geo=dict(
             showframe=False,
             showcoastlines=False,
@@ -391,6 +392,8 @@ html.Div([
             'left': '0',
             'width': '100%',
             'height': '100%',
+            'margin': '0',
+            'padding': '0'
         }
     )
 ], style={
@@ -403,6 +406,8 @@ html.Div([
     'background-color': 'white',
     'border-radius': '4px',
     'box-shadow': '0 0 10px rgba(0, 0, 0, 0.1)',
+    'margin': '0',
+    'padding': '0'
 }),
     html.Div(id='dash-radar-chart-container'),
     html.Div(id='dash-timeline-container'),
