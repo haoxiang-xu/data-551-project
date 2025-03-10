@@ -142,26 +142,20 @@ def generate_heatmap(df):
         data=correlation_json,
     )
 def generate_radar(df):
-    df_exploded = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
-
-    # Count the frequency of each genre and select the top 10 most frequent ones
-    top_genres = df_exploded['Genres'].value_counts().head(10).index
-
-    # Filter dataset to include only the top 10 genres
-    df_exploded = df_exploded[df_exploded['Genres'].isin(top_genres)]
-
     # Select relevant numerical columns
     columns = ['Score', 'Members', 'Popularity', 'Completed', 'On-Hold', 'Dropped']
 
-    # Aggregate by genre, computing the mean for each variable
-    df_genre_avg_original = df_exploded.groupby('Genres')[columns].mean().reset_index()
+    # Calculate mean values for each genre
+    df_genre_avg_original = df.groupby('Genres')[columns].mean().reset_index()
 
-    # Store the original mean data before normalization
-    df_genre_avg = df_genre_avg_original.copy()
-
-    # Normalize values for better visualization (Min-Max Scaling)
-    df_genre_avg[columns] = (df_genre_avg[columns] - df_genre_avg[columns].min()) / \
-                            (df_genre_avg[columns].max() - df_genre_avg[columns].min())
+    if len(df_genre_avg_original) == 1:
+        # Skip normalization if only one row (to avoid max scaling issue)
+        df_genre_avg = df_genre_avg_original.copy()
+    else:
+        # Normalize values for better visualization (Min-Max Scaling)
+        df_genre_avg = df_genre_avg_original.copy()
+        df_genre_avg[columns] = (df_genre_avg[columns] - df_genre_avg[columns].min()) / \
+                                (df_genre_avg[columns].max() - df_genre_avg[columns].min())
 
     json_data = [
         {
