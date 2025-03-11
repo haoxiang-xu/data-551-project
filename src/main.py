@@ -29,6 +29,12 @@ anime = anime.sample(n=3000, random_state=42)
 df_viewers = pd.read_csv("../data/anime_viewers_cleaned.csv")
 df_viewers = df_viewers[df_viewers["viewers"] >= 100]
 
+# load the merged_csv
+merged_df = pd.read_csv("../data/merged_data.csv")
+df = merged_df.copy()
+df_grouped = df.groupby(["Location", "Genres", "Type", "Source"])["user_id"].nunique().reset_index()
+df_grouped.rename(columns={"user_id": "Total Viewers"}, inplace=True)
+
 # { Consts } ---------------------------------------------------------------------------------------------------------------------------- #
 root_container_style = {
     'position': 'absolute',
@@ -82,6 +88,26 @@ def data_preprocessing(df, selected_filters=None):
     if selected_filters[1]:
         if selected_filters[1] != 'All':
             df = df[df['Genres'] == selected_filters[1]]    
+
+    return df
+
+def map_preprocessing(df, selected_filters = None):
+    df = df.copy()
+
+    if selected_filters[0] and selected_filters[0] != 'All':
+        df = df[df['Type'] == selected_filters[0]]
+            
+    if selected_filters[2]:
+        if selected_filters[2] != 'All':
+            df = df[df['Studios'] == selected_filters[2]]
+
+    # make sure the genre filter happen after the explode
+    if selected_filters[1]:
+        if selected_filters[1] != 'All':
+            df = df[df['Genres'] == selected_filters[1]]    
+
+    df = df.groupby("Location")["Total Viewers"].sum().reset_index()
+    df.rename(columns={"Total Viewers": "Total Viewers by Location"}, inplace=True)
 
     return df
 # { Data preprocessing } ---------------------------------------------------------------------------------------------------------------- # 
@@ -340,15 +366,15 @@ def generate_widgets(df):
 #     "Oceania": (3, 2),
 # }
 
-def generate_global_viewers_map():
+def generate_global_viewers_map(df):
     """
     Generate a map of the global anime viewers with full width and height.
     """
     fig = go.Figure(
         data=go.Choropleth(
-            locations=df_viewers["country"],
+            locations=df["Location"],
             locationmode="country names",
-            z=df_viewers["viewers"],
+            z=df["Total Viewers by Location"],
             colorscale="YlOrRd",
             marker_line_color='darkgray',
             marker_line_width=0.5,
@@ -428,12 +454,13 @@ html.Div([
 )
 def update_graphs(selected_filters):
     processed_anime = data_preprocessing(anime, selected_filters)
+    processed_map = map_preprocessing(df_grouped, selected_filters)
     heatmap_graph = generate_heatmap(processed_anime)
     radar_graph = generate_radar(processed_anime)
     bar_chart = generate_bar(processed_anime)
     time_line_graph = generate_timeline_component(processed_anime)
     widgets = generate_widgets(processed_anime)
-    global_viewers_map = generate_global_viewers_map()
+    global_viewers_map = generate_global_viewers_map(processed_map)
     return heatmap_graph, radar_graph, bar_chart, time_line_graph, widgets, global_viewers_map
 
 if __name__ == '__main__':
