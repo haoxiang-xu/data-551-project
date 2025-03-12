@@ -171,15 +171,18 @@ def generate_radar(df):
     # Select relevant numerical columns
     columns = ['Score', 'Members', 'Popularity', 'Completed', 'On-Hold', 'Dropped']
 
-    # Calculate mean values for each genre
+    # Calculate mean values per genre
     df_genre_avg_original = df.groupby('Genres')[columns].mean().reset_index()
 
-    if len(df_genre_avg_original) == 1:
+    # Get the top 10 genres based on count (number of entries per genre)
+    top_genres = df['Genres'].value_counts().head(10).index
+    df_genre_avg = df_genre_avg_original[df_genre_avg_original['Genres'].isin(top_genres)]
+
+    if len(df_genre_avg) == 1:
         # Skip normalization if only one row (to avoid max scaling issue)
-        df_genre_avg = df_genre_avg_original.copy()
+        pass
     else:
         # Normalize values for better visualization (Min-Max Scaling)
-        df_genre_avg = df_genre_avg_original.copy()
         df_genre_avg[columns] = (df_genre_avg[columns] - df_genre_avg[columns].min()) / \
                                 (df_genre_avg[columns].max() - df_genre_avg[columns].min())
 
