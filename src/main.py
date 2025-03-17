@@ -378,23 +378,38 @@ def generate_global_viewers_map(df):
             locations=df["Location"],
             locationmode="country names",
             z=df["Total Viewers by Location"],
-            colorscale=[(0, "rgb(255, 255, 255)"),
-                        (1, "rgb(255, 0, 4)")], 
+            colorscale=[(0, "rgb(255, 235, 238)"),
+                        (1, "rgb(215, 70, 76)")], 
             marker_line_color='darkgray',
             marker_line_width=0.5,
-            colorbar_title="Viewers",
+            colorbar=dict(
+                title="Viewers",
+                title_font=dict(size=16, color="#a53138", family="Jost"),
+                tickfont=dict(size=14, color="#a53138", family="Jost"),
+                thickness=18,
+                len=0.8,
+                outlinecolor="#a53138",
+                outlinewidth=1,
+                tickformat=".0f",
+                ticks="outside",
+                tickcolor="#a53138",
+                showticksuffix="last"
+            ),
         )
     )
  
     fig.update_layout(
-        autosize=False,  # Enables automatic resizing
+        autosize=True,
         width=None,  
         height=None,  
         margin=dict(l=0, r=0, t=0, b=0, pad=0),
         geo=dict(
-            showframe=False,
-            showcoastlines=False,
-            projection_type="natural earth"
+            showframe=False,  # Remove frame
+            showcoastlines=False,  # Remove coastlines for a cleaner look
+            fitbounds="locations",  # Ensure the map fits into the available area
+            projection_type="natural earth",  # Keeps the projection looking natural
+            projection_scale=1,  # Optimizes the scale
+            center=dict(lat=0, lon=0),  # Keeps it centered
         ),
         title_font_size=18
     )

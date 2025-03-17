@@ -1,9 +1,15 @@
 # Anime Popularity & Ratings Dashboard
-[Project Setup](#project-setup)
-## Overview
+
+## Table of Contents
+- [Overview](#overview)
+  - [Landing Page](#landing-page)
+  - [Sketch of App Layout](#sketch-of-app-layout)
+- [Project Setup](#project-setup)
+
+## Overview <a name="overview"></a>
 This project is designed to develop an interactive dashboard that analyzes key factors affecting anime **popularity and ratings**. The primary goal is to provide actionable insights for certain audiences such as **anime companies, studios, investors** and so on. Therefore, the dashboard would be helpful for maximizing profitability by identifying the most critical predictors influencing anime success.
 
-### **Landing Page**
+### **Landing Page** <a name="landing-page"></a>
 1. **Base Visualization Panel**
    - **Heat Map**
      - showing **the correlation between the various predictors with target variables**.
@@ -25,18 +31,36 @@ This project is designed to develop an interactive dashboard that analyzes key f
    - **Scatter plot (episode length vs. rating)**
      - Determines the relationship betweene these two, we can get **optimal** series length for the **better audience engagement and profitability**.
 
-## Sketch of App Layout
+### Sketch of App Layout <a name="sketch-of-app-layout"></a>
 ![Dashboard Sketch](./assets/others/dashboard_prototype.png)
 
 ## Project Setup
+
+1. Create a Virtual Environment
+
+```bash
+python -m venv venv
+```
+
+2. Activate the Virtual Environment
+```bash
+source venv/bin/activate # on Mac
+.\venv\Scripts\activate # on Windows
+```
+
 ```
 pip install -r requirements.txt
 ```
 
+3. Run the app
+```bash
+cd src
+python main.py
+```
 
 <div style="display: flex; flex-direction: column; align-items: center;">
   <h6>The dataset is collected from:</h6>
   <a href="https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset" target="_blank">
-  <img src="./assets/others/Kaggle.png" alt="kaggle site logo" width="45" height="22.5">
+  <img src="./assets/others/Kaggle.png" alt="kaggle site logo" height="32">
   </a>
 </div>
