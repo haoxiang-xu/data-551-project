@@ -21,9 +21,7 @@ import radar
 import heatmap
 # { npm components } -------------------------------------------------------------------------------------------------------------------- #
 
-anime = pd.read_csv("../data/preprocessed_anime.csv")
-# sampling
-anime = anime.sample(n=3000, random_state=42)
+anime = pd.read_csv("../data/preprocessed_anime.csv").sample(n=3000, random_state=42)
 
 # Load data for map component.
 df_viewers = pd.read_csv("../data/anime_viewers_cleaned.csv")
@@ -74,12 +72,12 @@ def data_preprocessing(df, selected_filters=None):
     df['start_date'] = pd.to_datetime(df['start_date'])
     df['end_date'] = pd.to_datetime(df['end_date'])
     
-    if selected_filters[0] and selected_filters[0] != 'All':
-        df = df[df['Type'] == selected_filters[0]]
-            
-    if selected_filters[2]:
+    if selected_filters[2] is not None:
         if selected_filters[2] != 'All':
             df = df[df['Studios'] == selected_filters[2]]
+    
+    if selected_filters[0] and selected_filters[0] != 'All':
+        df = df[df['Type'] == selected_filters[0]]
     
     # make sure the explode is done after type and studio filter
     df = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
@@ -97,9 +95,9 @@ def map_preprocessing(df, selected_filters = None):
     if selected_filters[0] and selected_filters[0] != 'All':
         df = df[df['Type'] == selected_filters[0]]
             
-    if selected_filters[2]:
-        if selected_filters[2] != 'All':
-            df = df[df['Studios'] == selected_filters[2]]
+    # if selected_filters[2]:
+    #     if selected_filters[2] != 'All':
+    #         df = df[df['Studios'] == selected_filters[2]]
 
     # make sure the genre filter happen after the explode
     if selected_filters[1]:
