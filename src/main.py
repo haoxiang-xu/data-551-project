@@ -387,7 +387,7 @@ def generate_global_viewers_map(df):
                 thickness=18,
                 len=0.8,
                 outlinecolor="#a53138",
-                outlinewidth=1,
+                outlinewidth=0,
                 tickformat=".0f",
                 ticks="outside",
                 tickcolor="#a53138",
@@ -441,7 +441,7 @@ html.Div([
     'bottom': '186px',
     'overflow': 'hidden',
     'background-color': 'white',
-    'border-radius': '4px',
+    'border-radius': '12px',
     'box-shadow': '0 0 10px rgba(0, 0, 0, 0.1)',
     'margin': '0',
     'padding': '0'
