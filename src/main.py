@@ -437,7 +437,7 @@ html.Div([
     'position': 'absolute',
     'top': '216px',
     'left': '18px',
-    'width': 'calc(66% - 36px)',
+    'width': 'calc(66% - 40px)',
     'bottom': '186px',
     'overflow': 'hidden',
     'background-color': 'white',
